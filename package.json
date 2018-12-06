@@ -1,0 +1,37 @@
+{
+  "name": "reactive-graphql",
+  "main": "./dist/index.js",
+  "typings": "dist/index",
+  "files": [
+    "dist"
+  ],
+  "version": "0.0.0-dev+semantic-release",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "jest",
+    "clean": "rimraf dist",
+    "prepare": "npm run build",
+    "prebuild": "npm run clean",
+    "build": "tsc -p tsconfig.dist.json"
+  },
+  "peerDependencies": {
+    "graphql": "14.0.2",
+    "graphql-tag": "2.8.0",
+    "graphql-tools": "4.0.3",
+    "rxjs": "5.5.10"
+  },
+  "devDependencies": {
+    "@types/graphql": "14.0.2",
+    "@types/jest": "23.3.10",
+    "graphql": "14.0.2",
+    "graphql-tag": "2.8.0",
+    "graphql-tools": "4.0.3",
+    "jest": "23.6.0",
+    "rimraf": "2.6.2",
+    "rxjs": "5.5.10",
+    "rxjs-marbles": "2.3.1",
+    "semantic-release": "15.12.4",
+    "ts-jest": "23.10.5",
+    "typescript": "3.2.1"
+  }
+}

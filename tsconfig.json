@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "allowJs": true,
+    "rootDir": "./src",
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "target": "es5",
+    "module": "commonjs",
+    "jsx": "react",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "lib": ["es6", "es2017", "esnext.asynciterable"],
+    "typeRoots": ["node_modules/@types"]
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["**/*.test.*"]
+}
