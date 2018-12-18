@@ -14,10 +14,10 @@
     "prebuild": "npm run clean",
     "build": "tsc -p tsconfig.dist.json"
   },
+  "dependencies": {
+    "graphql": "14.0.2"
+  },
   "peerDependencies": {
-    "graphql": "14.0.2",
-    "graphql-tag": "2.8.0",
-    "graphql-tools": "4.0.3",
     "rxjs": "5.5.10"
   },
   "devDependencies": {
