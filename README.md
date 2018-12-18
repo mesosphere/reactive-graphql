@@ -13,16 +13,20 @@ import graphql from "reactive-graphql";
 
 import { makeExecutableSchema } from "graphql-tools";
 import gql from "graphql-tag";
-import { Observable } from "rxjs";
+import { from, interval, of } from "rxjs";
+import { map, merge, scan, combineLatest } from "rxjs/operators";
 import { componentFromStream } from "@dcos/data-service";
 
 // mocked API clients that return Observables
-const oldPosts = Observable.from(["my first post", "a second post"]);
-const newPosts = Observable.interval(3000).map(v => `Blog Post #${v + 1}`);
+const oldPosts = from(["my first post", "a second post"]);
+const newPosts = interval(3000).pipe(map(v => `Blog Post #${v + 1}`));
 const fetchPosts = () =>
-  oldPosts.merge(newPosts).scan((acc, item) => [...acc, item], []);
+  oldPosts.pipe(
+    merge(newPosts),
+    scan((acc, item) => [...acc, item], [])
+  );
 const votesStore = {};
-const fetchVotesForPost = name => Observable.of(votesStore[name] || 0);
+const fetchVotesForPost = name => of(votesStore[name] || 0);
 
 const schema = makeExecutableSchema({
   typeDefs: `
@@ -47,8 +51,10 @@ const schema = makeExecutableSchema({
   resolvers: {
     Query: {
       posts(parent, args, context) {
-        return fetchPosts().map(emittedValue =>
-          emittedValue.map((value, index) => ({ id: index, title: value }))
+        return fetchPosts().pipe(
+          map(emittedValue =>
+            emittedValue.map((value, index) => ({ id: index, title: value }))
+          )
         );
       }
     },
@@ -71,17 +77,19 @@ const query = gql`
 
 const postStream = graphql(query, schema);
 const PostsList = componentFromStream(propsStream =>
-  propsStream.combineLatest(postStream, (props, result) => {
-    const {
-      data: { posts }
-    } = result;
+  propsStream.pipe(
+    combineLatest(postStream, (props, result) => {
+      const {
+        data: { posts }
+      } = result;
 
-    return posts.map(post => (
-      <div>
-        <h3>{post.title}</h3>
-      </div>
-    ));
-  })
+      return posts.map(post => (
+        <div>
+          <h3>{post.title}</h3>
+        </div>
+      ));
+    })
+  )
 );
 
 function App() {
@@ -103,11 +111,11 @@ ReactDOM.render(<App />, rootElement);
 
 ## API
 
-The first argument you pass into `reactive-graphql`  is an executable schema, the second one a parsed GraphQL query. You can pass in the root context as an object as a third parameter.
+The first argument you pass into `reactive-graphql` is an executable schema, the second one a parsed GraphQL query. You can pass in the root context as an object as a third parameter.
 
-The implementation will always return an Observable. 
+The implementation will always return an Observable.
 If any of the resolvers returns an error the implementation will emit the error on the stream.
-Otherwise the data will be wrapped in a `{ data }`  object, like most implementations handle this.
+Otherwise the data will be wrapped in a `{ data }` object, like most implementations handle this.
 
 ## License
 

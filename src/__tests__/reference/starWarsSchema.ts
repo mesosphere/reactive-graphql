@@ -18,10 +18,7 @@ import {
   GraphQLString
 } from "graphql";
 
-import { Observable } from "rxjs/Observable";
-import "rxjs/add/observable/of";
-import "rxjs/add/observable/fromPromise";
-import "rxjs/add/observable/throw";
+import { of, from, throwError } from "rxjs";
 
 import { getFriends, getHero, getHuman, getDroid } from "./starWarsData";
 
@@ -174,7 +171,7 @@ const humanType = new GraphQLObjectType({
       type: GraphQLList(characterInterface),
       description:
         "The friends of the human, or an empty list if they have none.",
-      resolve: human => Observable.fromPromise(Promise.all(getFriends(human)))
+      resolve: human => from(Promise.all(getFriends(human)))
     },
     appearsIn: {
       type: GraphQLList(episodeEnum),
@@ -188,7 +185,7 @@ const humanType = new GraphQLObjectType({
       type: GraphQLString,
       description: "Where are they from and how they came to be who they are.",
       resolve() {
-        Observable.throw(new Error("secretBackstory is secret."));
+        throwError(new Error("secretBackstory is secret."));
       }
     }
   }),
@@ -224,7 +221,7 @@ const droidType = new GraphQLObjectType({
       type: GraphQLList(characterInterface),
       description:
         "The friends of the droid, or an empty list if they have none.",
-      resolve: droid => Observable.fromPromise(Promise.all(getFriends(droid)))
+      resolve: droid => from(Promise.all(getFriends(droid)))
     },
     appearsIn: {
       type: GraphQLList(episodeEnum),
@@ -272,7 +269,7 @@ const queryType = new GraphQLObjectType({
           type: episodeEnum
         }
       },
-      resolve: (_, { episode }) => Observable.of(getHero(episode))
+      resolve: (_, { episode }) => of(getHero(episode))
     },
     human: {
       type: humanType,
@@ -282,7 +279,7 @@ const queryType = new GraphQLObjectType({
           type: GraphQLNonNull(GraphQLString)
         }
       },
-      resolve: (_, { id }) => Observable.of(getHuman(id))
+      resolve: (_, { id }) => of(getHuman(id))
     },
     droid: {
       type: droidType,
@@ -292,7 +289,7 @@ const queryType = new GraphQLObjectType({
           type: GraphQLNonNull(GraphQLString)
         }
       },
-      resolve: (_, { id }) => Observable.of(getDroid(id))
+      resolve: (_, { id }) => of(getDroid(id))
     }
   })
 });
