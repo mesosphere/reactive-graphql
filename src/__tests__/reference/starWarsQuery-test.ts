@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import "rxjs/add/operator/take";
+import { take } from "rxjs/operators";
 
 import StarWarsSchema from "./starWarsSchema";
 import graphqlObservable from "../../";
@@ -10,7 +10,7 @@ const graphql = (schema, query, _arg1?, _arg2?, params?) => {
       ${query}
     `;
     graphqlObservable(taggedQuery, schema, params)
-      .take(1)
+      .pipe(take(1))
       .subscribe(resolve);
   });
 };
