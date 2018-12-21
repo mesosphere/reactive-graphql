@@ -396,8 +396,8 @@ describe("Star Wars Query Tests", () => {
   });
 
   // Requires support to errors https://jira.mesosphere.com/browse/DCOS-22062
-  describe.skip("Reporting errors raised in resolvers", () => {
-    it("Correctly reports error on accessing secretBackstory", async () => {
+  describe("Reporting errors raised in resolvers", () => {
+    it.only("Correctly reports error on accessing secretBackstory", async () => {
       const query = `
         query HeroNameQuery {
           hero {
@@ -424,7 +424,7 @@ describe("Star Wars Query Tests", () => {
       });
     });
 
-    it("Correctly reports error on accessing secretBackstory in a list", async () => {
+    it.skip("Correctly reports error on accessing secretBackstory in a list", async () => {
       const query = `
         query HeroNameQuery {
           hero {
@@ -477,7 +477,7 @@ describe("Star Wars Query Tests", () => {
       });
     });
 
-    it("Correctly reports error on accessing through an alias", async () => {
+    it.skip("Correctly reports error on accessing through an alias", async () => {
       const query = `
         query HeroNameQuery {
           mainHero: hero {

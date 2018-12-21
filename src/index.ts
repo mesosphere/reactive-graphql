@@ -1,5 +1,5 @@
-import { Observable, of, from } from "rxjs";
-import { concatMap, map, combineLatest } from "rxjs/operators";
+import { Observable, of, from, throwError } from "rxjs";
+import { concatMap, map, combineLatest, catchError } from "rxjs/operators";
 
 import {
   DefinitionNode,
@@ -111,7 +111,7 @@ export default function graphqlObservable<T = object>(
         definition,
         context,
         parent
-      );
+      ).pipe(catchError(() => of(null)));
 
       // Directly return the leaf nodes
       if (definition.selectionSet === undefined) {
@@ -314,13 +314,18 @@ function resolveField(
   }
 
   const args = buildResolveArgs(definition, context);
-  const resolvedValue = field.resolve(
-    parent,
-    args,
-    context,
-    // @ts-ignore
-    null // that would be the info
-  );
+  let resolvedValue;
+  try {
+    resolvedValue = field.resolve(
+      parent,
+      args,
+      context,
+      // @ts-ignore
+      null // that would be the info
+    );
+  } catch (e) {
+    return throwError(e);
+  }
 
   if (resolvedValue instanceof Observable) {
     return resolvedValue;
