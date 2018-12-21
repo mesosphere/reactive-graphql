@@ -102,7 +102,7 @@ export default function graphqlObservable<T = object>(
       // Something unexpcected was passed into getField
       if (field === null) {
         return throwObservable(
-          `field was not of the right type. Given type: ${type}`
+          `field '${definition.name.value}' was not found in the type '${type}'`
         );
       }
 
