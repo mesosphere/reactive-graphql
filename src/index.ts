@@ -312,22 +312,28 @@ function resolveField(
   }
 
   const args = buildResolveArgs(definition, context);
-  const resolvedValue = field.resolve(
-    parent,
-    args,
-    context,
-    // @ts-ignore
-    null // that would be the info
-  );
+  try {
+    const resolvedValue = field.resolve(
+      parent,
+      args,
+      context,
+      // @ts-ignore
+      null // that would be the info
+    );
 
-  if (resolvedValue instanceof Observable) {
-    return resolvedValue;
+    if (resolvedValue instanceof Observable) {
+      return resolvedValue;
+    }
+
+    if (resolvedValue instanceof Promise) {
+      return Observable.fromPromise(resolvedValue);
+    }
+
+    // It seems like a plain value
+    return Observable.of(resolvedValue);
+  } catch (err) {
+    return throwObservable(
+      `resolver '${field.name}' throws this error: '${err}'`
+    );
   }
-
-  if (resolvedValue instanceof Promise) {
-    return Observable.fromPromise(resolvedValue);
-  }
-
-  // It seems like a plain value
-  return Observable.of(resolvedValue);
 }

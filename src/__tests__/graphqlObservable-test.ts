@@ -103,6 +103,7 @@ const fieldResolverSchema = makeExecutableSchema({
       plain: Plain!
       item: Item!
       nested: Nested!
+      throwingResolver: String
     }
   `,
   resolvers: {
@@ -164,6 +165,9 @@ const fieldResolverSchema = makeExecutableSchema({
 
       nested() {
         return Observable.of({});
+      },
+      throwingResolver() {
+        throw new Error("my personal error");
       }
     }
   }
@@ -524,6 +528,23 @@ describe("graphqlObservable", function() {
         const result = graphqlObservable(query, fieldResolverSchema, {});
         m.expect(result.take(1)).toBeObservable(expected);
       });
+    });
+
+    itMarbles("nested resolvers pass down the context and parent", function(m) {
+      const query = gql`
+        query {
+          throwingResolver
+        }
+      `;
+      const expected = m.cold(
+        "#",
+        {},
+        new Error(
+          "graphqlObservable error: resolver 'throwingResolver' throws this error: 'Error: my personal error'"
+        )
+      );
+      const result = graphqlObservable(query, fieldResolverSchema, {});
+      m.expect(result.take(1)).toBeObservable(expected);
     });
   });
 
