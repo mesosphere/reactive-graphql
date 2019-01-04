@@ -253,10 +253,7 @@ export default function graphqlObservable<T = object>(
 }
 
 function throwObservable(error: string): Observable<any> {
-  const graphqlErrorMessage = `graphqlObservable error: ${error}`;
-  const graphqlError = new Error(graphqlErrorMessage);
-
-  return Observable.throw(graphqlError);
+  return Observable.throw(new Error(`reactive-graphql: ${error}`));
 }
 
 function buildResolveArgs(definition: FieldNode, context: object) {
