@@ -530,7 +530,7 @@ describe("graphqlObservable", function() {
       });
     });
 
-    itMarbles("nested resolvers pass down the context and parent", function(m) {
+    itMarbles("throwing an error results in an error observable", function(m) {
       const query = gql`
         query {
           throwingResolver
@@ -546,6 +546,26 @@ describe("graphqlObservable", function() {
       const result = graphqlObservable(query, fieldResolverSchema, {});
       m.expect(result.take(1)).toBeObservable(expected);
     });
+
+    itMarbles(
+      "accessing an unknown query field results in an error observable",
+      function(m) {
+        const query = gql`
+          query {
+            youDontKnowMe
+          }
+        `;
+        const expected = m.cold(
+          "#",
+          {},
+          new Error(
+            "reactive-graphql: field 'youDontKnowMe' was not found on type 'Query'. The only fields found in this Object are: plain,item,nested,throwingResolver."
+          )
+        );
+        const result = graphqlObservable(query, fieldResolverSchema, {});
+        m.expect(result.take(1)).toBeObservable(expected);
+      }
+    );
   });
 
   describe("Mutation", function() {
