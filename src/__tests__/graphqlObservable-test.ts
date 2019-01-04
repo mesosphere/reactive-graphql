@@ -540,7 +540,7 @@ describe("graphqlObservable", function() {
         "#",
         {},
         new Error(
-          "graphqlObservable error: resolver 'throwingResolver' throws this error: 'Error: my personal error'"
+          "reactive-graphql: resolver 'throwingResolver' throws this error: 'Error: my personal error'"
         )
       );
       const result = graphqlObservable(query, fieldResolverSchema, {});
