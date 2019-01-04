@@ -22,7 +22,10 @@ import {
   isTypeSystemDefinitionNode,
   isTypeSystemExtensionNode,
   Kind,
-  ArgumentNode
+  ArgumentNode,
+  isScalarType,
+  isEnumType,
+  isObjectType
 } from "graphql";
 
 // WARNING: This is NOT a spec complete graphql implementation
@@ -106,7 +109,11 @@ export default function graphqlObservable<T = object>(
       // Something unexpcected was passed into getField
       if (field === null) {
         return throwObservable(
-          `field was not of the right type. Given type: ${type}`
+          `field '${
+            definition.name.value
+          }' was not found on type '${type}'. ${fieldNotFoundMessageForType(
+            type
+          )}`
         );
       }
 
@@ -333,4 +340,26 @@ function resolveField(
       `resolver '${field.name}' throws this error: '${err}'`
     );
   }
+}
+
+export function fieldNotFoundMessageForType(type: GraphQLType | null): string {
+  if (type === null) {
+    return "The type should not be null.";
+  }
+
+  if (isScalarType(type)) {
+    return "The field has a scalar type, which means it supports no nesting.";
+  }
+
+  if (isEnumType(type)) {
+    return "The field has an enum type, which means it supports no nesting.";
+  }
+
+  if (isObjectType(type)) {
+    return `The only fields found in this Object are: ${Object.keys(
+      type.getFields()
+    )}.`;
+  }
+
+  return "";
 }
