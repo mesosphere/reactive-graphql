@@ -219,7 +219,8 @@ describe("graphqlObservable", function() {
 
       const nameFilter = of("apollo11");
       const result = graphqlObservable(query, schema, {
-        query: dataSource,
+        query: dataSource
+      }, {
         nameFilter
       });
 
@@ -630,11 +631,12 @@ describe("graphqlObservable", function() {
       `;
 
       const commandContext = of("a resquest");
-
+      const variables = {
+        name: "RocketShip"
+      };
       const result = graphqlObservable(mutation, schema, {
         mutation: commandContext,
-        name: "RocketShip"
-      });
+      }, variables);
 
       const expected = m.cold("(a|)", {
         a: { data: { shut: { name: "RocketShip" } } }

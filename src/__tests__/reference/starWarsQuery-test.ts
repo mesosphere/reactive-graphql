@@ -4,12 +4,12 @@ import { take } from "rxjs/operators";
 import StarWarsSchema from "./starWarsSchema";
 import graphqlObservable from "../../";
 
-const graphql = (schema, query, _arg1?, _arg2?, params?) => {
+const graphql = (schema, query, _rootValue?, contextValue?, variableValues?) => {
   return new Promise(resolve => {
     const taggedQuery = gql`
       ${query}
     `;
-    graphqlObservable(taggedQuery, schema, params)
+    graphqlObservable(taggedQuery, schema, contextValue, variableValues)
       .pipe(take(1))
       .subscribe(resolve);
   });
