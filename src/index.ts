@@ -68,7 +68,8 @@ function isFieldWithResolver(
 export default function graphqlObservable<T = object>(
   doc: DocumentNode,
   schema: Schema,
-  context: object
+  context: object = {},
+  variables: object = {},
 ): Observable<{ data: T }> {
   if (doc.definitions.length !== 1) {
     return throwObservable("document root must have a single definition");
@@ -80,7 +81,7 @@ export default function graphqlObservable<T = object>(
 
   const types = schema._typeMap;
 
-  return resolve(doc.definitions[0], context, null, null).pipe(
+  return resolve(doc.definitions[0], context, variables, null, null).pipe(
     map((data: T) => ({
       data
     }))
@@ -89,13 +90,14 @@ export default function graphqlObservable<T = object>(
   function resolve(
     definition: SchemaNode,
     context: object,
+    variables: object,
     parent: any,
     type: GraphQLType | null
   ) {
     if (isOperationDefinition(definition)) {
       const nextType = getResultType(type, definition, parent);
 
-      return resolveResult(definition, context, null, nextType);
+      return resolveResult(definition, context, variables, null, nextType);
     }
 
     // The definition gives us the field to resolve
@@ -117,6 +119,7 @@ export default function graphqlObservable<T = object>(
         field,
         definition,
         context,
+        variables,
         parent
       );
 
@@ -132,11 +135,11 @@ export default function graphqlObservable<T = object>(
           }
 
           if (emitted instanceof Array) {
-            return resolveArrayResults(definition, context, emitted, type);
+            return resolveArrayResults(definition, context, variables, emitted, type);
           }
 
           const nextType = getResultType(type, definition, emitted);
-          return resolveResult(definition, context, emitted, nextType);
+          return resolveResult(definition, context, variables, emitted, nextType);
         })
       );
     }
@@ -151,6 +154,7 @@ export default function graphqlObservable<T = object>(
   function resolveResult(
     definition: SchemaNode,
     context: object,
+    variables: object,
     parent: any,
     type: GraphQLType | null
   ): Observable<any> {
@@ -174,7 +178,7 @@ export default function graphqlObservable<T = object>(
         return throwObservable("Unsupported use of fragments in selection set");
       }
 
-      const result = resolve(sel, context, parent, type);
+      const result = resolve(sel, context, variables, parent, type);
       const fieldName = (sel.alias || sel.name).value;
 
       return acc.pipe(combineLatest(result, objectAppendWithKey(fieldName)));
@@ -184,6 +188,7 @@ export default function graphqlObservable<T = object>(
   function resolveArrayResults(
     definition: SchemaNode,
     context: object,
+    variables: object,
     parents: any[],
     parentType: GraphQLType | null
   ) {
@@ -192,6 +197,7 @@ export default function graphqlObservable<T = object>(
       const resultObserver = resolveResult(
         definition,
         context,
+        variables,
         result,
         nextType
       );
@@ -269,13 +275,13 @@ function throwObservable(error: string): Observable<any> {
   return throwError(new Error(`reactive-graphql: ${error}`));
 }
 
-function buildResolveArgs(definition: FieldNode, context: object) {
+function buildResolveArgs(definition: FieldNode, variables: object) {
   return (definition.arguments || []).reduce(
     (carry, arg) => ({
       ...carry,
       ...(arg.value.kind === Kind.VARIABLE
         ? // @ts-ignore
-          { [arg.name.value]: context[arg.value.name.value] }
+        { [arg.name.value]: variables[arg.value.name.value] }
         : {
             [arg.name.value]: getArgValue(arg)
           })
@@ -311,13 +317,14 @@ function resolveField(
   field: GraphQLField<any, any, { [argName: string]: any }>,
   definition: FieldNode,
   context: object,
+  variables: object,
   parent: any
 ): Observable<any> {
   if (!isFieldWithResolver(field)) {
     return of(parent[field.name]);
   }
 
-  const args = buildResolveArgs(definition, context);
+  const args = buildResolveArgs(definition, variables);
   try {
     const resolvedValue = field.resolve(
       parent,
