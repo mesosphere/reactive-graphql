@@ -33,7 +33,7 @@ const resolvers = {
     // resolvers can return an Observable 
     time: () => {
       // Observable that emits increasing numbers every 1 second
-      returns timer(1000, 1000);
+      return timer(1000, 1000);
     },
   }
 }
