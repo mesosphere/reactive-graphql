@@ -12,7 +12,6 @@ import "./styles.css";
 import graphql from "reactive-graphql";
 
 import { makeExecutableSchema } from "graphql-tools";
-import gql from "graphql-tag";
 import { from, interval, of } from "rxjs";
 import { map, merge, scan, combineLatest } from "rxjs/operators";
 import { componentFromStream } from "@dcos/data-service";
@@ -66,7 +65,7 @@ const schema = makeExecutableSchema({
   }
 });
 
-const query = gql`
+const query = `
   query {
     posts {
       title
@@ -111,7 +110,7 @@ ReactDOM.render(<App />, rootElement);
 
 ## API
 
-The first argument you pass into `reactive-graphql` is an executable schema, the second one a parsed GraphQL query. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
+The first argument you pass into `reactive-graphql` is an executable schema, the second one a GraphQL query, either parsed or as string. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
 
 The implementation will always return an Observable.
 If any of the resolvers returns an error the implementation will emit the error on the stream.

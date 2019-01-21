@@ -201,6 +201,26 @@ describe("graphqlObservable", function() {
       m.expect(result.pipe(take(1))).toBeObservable(expected);
     });
 
+    itMarbles("solves listing all fields with string query", function(m) {
+      const query = `
+        query {
+          launched {
+            name
+          }
+        }
+      `;
+
+      const expectedData = [{ name: "discovery" }];
+      const dataSource = of(expectedData);
+      const expected = m.cold("(a|)", {
+        a: { data: { launched: expectedData } }
+      });
+
+      const result = graphql(schema, query, { query: dataSource });
+
+      m.expect(result.pipe(take(1))).toBeObservable(expected);
+    });
+
     itMarbles("filters by variable argument", function(m) {
       const query = gql`
         query {
