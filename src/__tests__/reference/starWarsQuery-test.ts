@@ -2,9 +2,15 @@ import gql from "graphql-tag";
 import { take } from "rxjs/operators";
 
 import StarWarsSchema from "./starWarsSchema";
-import graphqlObservable from "../../";
+import { graphql as graphqlObservable } from "../../";
 
-const graphql = (schema, query, _rootValue?, contextValue?, variableValues?) => {
+const graphql = (
+  schema,
+  query,
+  _rootValue?,
+  contextValue?,
+  variableValues?
+) => {
   return new Promise(resolve => {
     const taggedQuery = gql`
       ${query}
