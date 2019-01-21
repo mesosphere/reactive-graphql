@@ -19,7 +19,8 @@ import {
   ArgumentNode,
   isScalarType,
   isEnumType,
-  isObjectType
+  isObjectType,
+  parse
 } from "graphql";
 
 // WARNING: This is NOT a spec complete graphql implementation
@@ -67,12 +68,24 @@ function isFieldWithResolver(
 
 export default function graphql<T = object>(
   schema: Schema,
-  doc: DocumentNode,
+  query: string | DocumentNode,
   context: object = {},
   variables: object = {}
-): Observable<{ data: T }> {
+): Observable<{ data?: T; errors?: string[] }> {
+  // Parse
+  let doc;
+  if (typeof query === "string") {
+    try {
+      doc = parse(query);
+    } catch (syntaxError) {
+      return of({ errors: [syntaxError] });
+    }
+  } else {
+    doc = query;
+  }
+
   if (doc.definitions.length !== 1) {
-    return throwObservable("document root must have a single definition");
+    return throwObservable("query must have a single definition as root");
   }
 
   if (!schema._typeMap) {
