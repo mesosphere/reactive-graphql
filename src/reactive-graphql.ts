@@ -1,4 +1,4 @@
-import { Observable, of, from, throwError } from "rxjs";
+import { Observable, of, from, throwError, isObservable } from "rxjs";
 import { concatMap, map, combineLatest } from "rxjs/operators";
 
 import {
@@ -359,7 +359,7 @@ function resolveField(
       null // that would be the info
     );
 
-    if (resolvedValue instanceof Observable) {
+    if (isObservable(resolvedValue)) {
       return resolvedValue;
     }
 
