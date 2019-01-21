@@ -20,6 +20,7 @@ The usage is very similar to `graphql-js`'s [`graphql`](https://graphql.org/grap
 ```js
 import { makeExecutableSchema } from 'graphql-tools';
 import gql from 'graphql-tag';
+import { timer } from 'rxjs';
 import graphql  from 'reactive-graphql';
 
 const typeDefs = `
@@ -58,10 +59,11 @@ stream.subscribe(res => console.log(res))
 outputs
 
 ```
-0
-1
-2
-3
+{ data: { time: 0 } }
+{ data: { time: 1 } }
+{ data: { time: 2 } }
+{ data: { time: 3 } }
+{ data: { time: 4 } }
 ...
 ```
 
