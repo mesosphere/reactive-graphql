@@ -5,7 +5,7 @@
 
 Execute GraphQL queries against reactive resolvers (resolvers that return Observable) to get a reactive results.
 
-This project aims to become a complete GraphQL implementation based around [RxJS](https://github.com/ReactiveX/rxjs).
+_This project aims to become a complete GraphQL implementation based around [RxJS](https://github.com/ReactiveX/rxjs)._
 
 ## Install
 ```
