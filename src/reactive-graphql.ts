@@ -66,8 +66,8 @@ function isFieldWithResolver(
 }
 
 export default function graphql<T = object>(
-  doc: DocumentNode,
   schema: Schema,
+  doc: DocumentNode,
   context: object = {},
   variables: object = {}
 ): Observable<{ data: T }> {
