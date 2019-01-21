@@ -81,6 +81,7 @@ Unsupported GraphQL features:
 - [reactive-graphql-react](https://github.com/DanielMSchmidt/reactive-graphql-react)
 - [apollo-link-reactive-schema](https://github.com/getstation/apollo-link-reactive-schema)
 - [@dcos/data-service](https://github.com/dcos-labs/data-service)
+- [graphql-rxjs](https://github.com/DxCx/graphql-rxjs/)
 
 ## Advanced usage [![Edit](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/DanielMSchmidt/reactive-graphql-demo/tree/master/?hidenavigation=1)
 ```js
