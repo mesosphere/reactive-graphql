@@ -1,8 +1,98 @@
 # Reactive GraphQL
 
-This project aims to become a complete GraphQL implementation based around [RxJS](https://github.com/ReactiveX/rxjs).
+> GraphQL reactive executor
 
-## Usage Example [![Edit](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/DanielMSchmidt/reactive-graphql-demo/tree/master/?hidenavigation=1)
+[![npm version](https://badge.fury.io/js/reactive-graphql.svg)](https://badge.fury.io/js/reactive-graphql)
+
+Execute GraphQL queries against reactive resolvers (resolvers that return Observable) to get a reactive results.
+
+_This project aims to become a complete GraphQL implementation based around [RxJS](https://github.com/ReactiveX/rxjs)._
+
+## Install
+
+```
+$ npm i reactive-graphql --save
+```
+
+## Usage
+
+The usage is very similar to `graphql-js`'s [`graphql`](https://graphql.org/graphql-js/graphql/#graphql) function, except that:
+
+- resolvers can return an Observable
+- the returned value is an Observable
+
+```js
+import { makeExecutableSchema } from "graphql-tools";
+import gql from "graphql-tag";
+import { timer } from "rxjs";
+import graphql from "reactive-graphql";
+
+const typeDefs = `
+  type Query {
+    time: Int!
+  }
+`;
+
+const resolvers = {
+  Query: {
+    // resolvers can return an Observable
+    time: () => {
+      // Observable that emits increasing numbers every 1 second
+      return timer(1000, 1000);
+    }
+  }
+};
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers
+});
+
+const query = gql`
+  query {
+    time
+  }
+`;
+
+const stream = graphql(query, schema);
+// stream is an Observable
+stream.subscribe(res => console.log(res));
+```
+
+outputs
+
+```
+{ data: { time: 0 } }
+{ data: { time: 1 } }
+{ data: { time: 2 } }
+{ data: { time: 3 } }
+{ data: { time: 4 } }
+...
+```
+
+## API
+
+The first argument you pass into `reactive-graphql` is a GraphQL query, either parsed or as string, the second one is an executable schema. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
+
+The implementation will always return an Observable.
+If any of the resolvers returns an error the implementation will emit the error on the stream.
+Otherwise the data will be wrapped in a `{ data }` object, like most implementations handle this.
+
+## Caveats
+
+Unsupported GraphQL features:
+
+- fragments of all kinds
+- subscriptions (as everything is treated as a subscription)
+
+## See Also
+
+- [reactive-graphql-react](https://github.com/DanielMSchmidt/reactive-graphql-react)
+- [apollo-link-reactive-schema](https://github.com/getstation/apollo-link-reactive-schema)
+- [@dcos/data-service](https://github.com/dcos-labs/data-service)
+- [graphql-rxjs](https://github.com/DxCx/graphql-rxjs/)
+
+## Advanced usage [![Edit](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/DanielMSchmidt/reactive-graphql-demo/tree/master/?hidenavigation=1)
 
 ```js
 import React from "react";
@@ -102,20 +192,6 @@ function App() {
 const rootElement = document.getElementById("root");
 ReactDOM.render(<App />, rootElement);
 ```
-
-## Unsupported features
-
-- fragments of all kinds
-- subscriptions (as everything is treated as a subscription)
-- only one top-level operation is supported
-
-## API
-
-The 1st argument you pass into `reactive-graphql` is an executable schema, the 2nd one a GraphQL query, either parsed or as string. You can pass in the root value as 3rd and the root context as an object as 4th parameter. The variables can be passed as 5th parameter.
-
-The implementation will always return an Observable.
-If any of the resolvers returns an error the implementation will emit the error on the stream.
-Otherwise the data will be wrapped in a `{ data }` object, like most implementations handle this.
 
 ## License
 
