@@ -15,7 +15,7 @@ const graphql = (
     const taggedQuery = gql`
       ${query}
     `;
-    graphqlObservable(taggedQuery, schema, contextValue, variableValues)
+    graphqlObservable(schema, taggedQuery, contextValue, variableValues)
       .pipe(take(1))
       .subscribe(resolve);
   });
