@@ -28,13 +28,13 @@ const typeDefs = `
   }
 `;
 
-// `time` is an Observable that emits increasing numbers every 1 second
-const time = timer(1000, 1000);
-
 const resolvers = {
   Query: {
-    // time resolver returns an Observable 
-    time: () => timer(1000, 1000),
+    // resolvers can return an Observable 
+    time: () => {
+      // Observable that emits increasing numbers every 1 second
+      returns timer(1000, 1000);
+    },
   }
 }
 
