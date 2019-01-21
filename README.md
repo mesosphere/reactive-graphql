@@ -9,7 +9,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./styles.css";
 
-import graphql from "reactive-graphql";
+import { graphql } from "reactive-graphql";
 
 import { makeExecutableSchema } from "graphql-tools";
 import { from, interval, of } from "rxjs";
