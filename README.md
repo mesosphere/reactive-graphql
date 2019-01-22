@@ -74,7 +74,7 @@ const query = `
   }
 `;
 
-const postStream = graphql(query, schema);
+const postStream = graphql(schema, query);
 const PostsList = componentFromStream(propsStream =>
   propsStream.pipe(
     combineLatest(postStream, (props, result) => {
@@ -107,10 +107,11 @@ ReactDOM.render(<App />, rootElement);
 
 - fragments of all kinds
 - subscriptions (as everything is treated as a subscription)
+- only one top-level operation is supported
 
 ## API
 
-The first argument you pass into `reactive-graphql` is an executable schema, the second one a GraphQL query, either parsed or as string. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
+The 1st argument you pass into `reactive-graphql` is an executable schema, the 2nd one a GraphQL query, either parsed or as string. You can pass in the root value as 3rd and the root context as an object as 4th parameter. The variables can be passed as 5th parameter.
 
 The implementation will always return an Observable.
 If any of the resolvers returns an error the implementation will emit the error on the stream.

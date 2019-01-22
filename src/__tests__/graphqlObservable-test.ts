@@ -26,13 +26,24 @@ const typeDefs = `
 
 const mockResolvers = {
   Query: {
-    launched: (_, args, ctx) => {
+    launched: (parent, args, ctx) => {
       const { name } = args;
 
       // act according with the type of filter
       if (name === undefined) {
         // When no filter is passed
-        return ctx.query;
+        if (!parent) {
+          return ctx.query;
+        }
+
+        return ctx.query.pipe(
+          map((shuttles: any[]) =>
+            shuttles.map(shuttle => ({
+              ...shuttle,
+              name: shuttle.name + parent.shuttleSuffix
+            }))
+          )
+        );
       } else if (typeof name === "string") {
         // When the filter is a value
         return ctx.query.pipe(
@@ -179,6 +190,10 @@ const itMarbles = (title, test) => {
   return it(title, marbles(test));
 };
 
+itMarbles.only = (title, test) => {
+  return it.only(title, marbles(test));
+};
+
 describe("graphqlObservable", function() {
   describe("Query", function() {
     itMarbles("solves listing all fields", function(m) {
@@ -196,7 +211,7 @@ describe("graphqlObservable", function() {
         a: { data: { launched: expectedData } }
       });
 
-      const result = graphql(schema, query, { query: dataSource });
+      const result = graphql(schema, query, null, { query: dataSource });
 
       m.expect(result.pipe(take(1))).toBeObservable(expected);
     });
@@ -216,7 +231,7 @@ describe("graphqlObservable", function() {
         a: { data: { launched: expectedData } }
       });
 
-      const result = graphql(schema, query, { query: dataSource });
+      const result = graphql(schema, query, null, { query: dataSource });
 
       m.expect(result.pipe(take(1))).toBeObservable(expected);
     });
@@ -241,6 +256,7 @@ describe("graphqlObservable", function() {
       const result = graphql(
         schema,
         query,
+        null,
         {
           query: dataSource
         },
@@ -268,7 +284,7 @@ describe("graphqlObservable", function() {
         a: { data: { launched: [expectedData[0]] } }
       });
 
-      const result = graphql(schema, query, {
+      const result = graphql(schema, query, null, {
         query: dataSource
       });
 
@@ -290,7 +306,7 @@ describe("graphqlObservable", function() {
         a: { data: { launched: [{ name: "discovery" }] } }
       });
 
-      const result = graphql(schema, query, {
+      const result = graphql(schema, query, null, {
         query: dataSource
       });
 
@@ -312,9 +328,38 @@ describe("graphqlObservable", function() {
         a: { data: { launched: [{ title: "challenger" }] } }
       });
 
-      const result = graphql(schema, query, {
+      const result = graphql(schema, query, null, {
         query: dataSource
       });
+
+      m.expect(result.pipe(take(1))).toBeObservable(expected);
+    });
+
+    itMarbles.only("resolves using root value", function(m) {
+      const query = gql`
+        query {
+          launched {
+            name
+          }
+        }
+      `;
+
+      const expectedData = [{ name: "challenger", firstFlight: 1984 }];
+      const dataSource = of(expectedData);
+      const expected = m.cold("(a|)", {
+        a: { data: { launched: [{ name: "challenger-nasa" }] } }
+      });
+
+      const result = graphql(
+        schema,
+        query,
+        {
+          shuttleSuffix: "-nasa"
+        },
+        {
+          query: dataSource
+        }
+      );
 
       m.expect(result.pipe(take(1))).toBeObservable(expected);
     });
@@ -332,7 +377,7 @@ describe("graphqlObservable", function() {
           const expected = m.cold("(a|)", {
             a: { data: { plain: { noFieldResolver: "Yes" } } }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -347,7 +392,7 @@ describe("graphqlObservable", function() {
           const expected = m.cold("(a|)", {
             a: { data: { plain: { fieldResolver: "I am a field resolver" } } }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -370,7 +415,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -393,7 +438,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -414,7 +459,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
       });
@@ -439,7 +484,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -466,7 +511,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -493,7 +538,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
@@ -516,7 +561,7 @@ describe("graphqlObservable", function() {
               }
             }
           });
-          const result = graphql(fieldResolverSchema, query, {});
+          const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
       });
@@ -546,7 +591,7 @@ describe("graphqlObservable", function() {
             }
           }
         });
-        const result = graphql(fieldResolverSchema, query, {});
+        const result = graphql(fieldResolverSchema, query, null, {});
         m.expect(result.pipe(take(1))).toBeObservable(expected);
       });
     });
@@ -564,7 +609,7 @@ describe("graphqlObservable", function() {
           "reactive-graphql: resolver 'throwingResolver' throws this error: 'Error: my personal error'"
         )
       );
-      const result = graphql(fieldResolverSchema, query, {});
+      const result = graphql(fieldResolverSchema, query, null, {});
       m.expect(result.pipe(take(1))).toBeObservable(expected);
     });
 
@@ -583,7 +628,7 @@ describe("graphqlObservable", function() {
             "reactive-graphql: field 'youDontKnowMe' was not found on type 'Query'. The only fields found in this Object are: plain,item,nested,throwingResolver."
           )
         );
-        const result = graphql(fieldResolverSchema, query, {});
+        const result = graphql(fieldResolverSchema, query, null, {});
         m.expect(result.pipe(take(1))).toBeObservable(expected);
       }
     );
@@ -602,7 +647,7 @@ describe("graphqlObservable", function() {
       const fakeRequest = { name: "RocketShip" };
       const commandContext = of(fakeRequest);
 
-      const result = graphql(schema, mutation, {
+      const result = graphql(schema, mutation, null, {
         mutation: commandContext
       });
 
@@ -626,7 +671,7 @@ describe("graphqlObservable", function() {
 
         const commandContext = of("a request");
 
-        const result = graphql(schema, mutation, {
+        const result = graphql(schema, mutation, null, {
           mutation: commandContext
         });
 
@@ -662,6 +707,7 @@ describe("graphqlObservable", function() {
       const result = graphql(
         schema,
         mutation,
+        null,
         {
           mutation: commandContext
         },

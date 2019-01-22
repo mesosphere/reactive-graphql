@@ -69,6 +69,7 @@ function isFieldWithResolver(
 export default function graphql<T = object>(
   schema: Schema,
   query: string | DocumentNode,
+  rootValue?: any,
   context: object = {},
   variables: object = {}
 ): Observable<{ data?: T; errors?: string[] }> {
@@ -94,7 +95,7 @@ export default function graphql<T = object>(
 
   const types = schema._typeMap;
 
-  return resolve(doc.definitions[0], context, variables, null, null).pipe(
+  return resolve(doc.definitions[0], context, variables, rootValue, null).pipe(
     map((data: T) => ({
       data
     }))
@@ -110,7 +111,7 @@ export default function graphql<T = object>(
     if (isOperationDefinition(definition)) {
       const nextType = getResultType(type, definition, parent);
 
-      return resolveResult(definition, context, variables, null, nextType);
+      return resolveResult(definition, context, variables, parent, nextType);
     }
 
     // The definition gives us the field to resolve
