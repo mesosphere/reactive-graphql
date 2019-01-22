@@ -68,7 +68,7 @@ outputs
 ```
 
 ## API
-The first argument you pass into `reactive-graphql` is a GraphQL query,either parsed or as string, the second one is an executable schema. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
+The first argument you pass into `reactive-graphql` is a GraphQL query, either parsed or as string, the second one is an executable schema. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
 
 The implementation will always return an Observable.
 If any of the resolvers returns an error the implementation will emit the error on the stream.
