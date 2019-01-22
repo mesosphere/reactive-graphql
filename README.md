@@ -21,7 +21,7 @@ The usage is very similar to `graphql-js`'s [`graphql`](https://graphql.org/grap
 import { makeExecutableSchema } from 'graphql-tools';
 import gql from 'graphql-tag';
 import { timer } from 'rxjs';
-import graphql  from 'reactive-graphql';
+import { graphql } from 'reactive-graphql';
 
 const typeDefs = `
   type Query {
@@ -51,7 +51,7 @@ const query = gql`
   }
 `;
 
-const stream = graphql(query, schema);
+const stream = graphql(schema, query);
 // stream is an Observable
 stream.subscribe(res => console.log(res))
 ```
@@ -68,7 +68,7 @@ outputs
 ```
 
 ## API
-The first argument you pass into `reactive-graphql` is an executable schema, the second one a parsed GraphQL query. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
+The first argument you pass into `reactive-graphql` is a GraphQL query,either parsed or as string, the second one is an executable schema. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
 
 The implementation will always return an Observable.
 If any of the resolvers returns an error the implementation will emit the error on the stream.
@@ -78,6 +78,7 @@ Otherwise the data will be wrapped in a `{ data }` object, like most implementat
 Unsupported GraphQL features:
 - fragments of all kinds
 - subscriptions (as everything is treated as a subscription)
+- only one top-level operation is supported
 
 ## See Also
 - [reactive-graphql-react](https://github.com/DanielMSchmidt/reactive-graphql-react)
@@ -91,10 +92,9 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./styles.css";
 
-import graphql from "reactive-graphql";
+import { graphql } from "reactive-graphql";
 
 import { makeExecutableSchema } from "graphql-tools";
-import gql from "graphql-tag";
 import { from, interval, of } from "rxjs";
 import { map, merge, scan, combineLatest } from "rxjs/operators";
 import { componentFromStream } from "@dcos/data-service";
@@ -148,7 +148,7 @@ const schema = makeExecutableSchema({
   }
 });
 
-const query = gql`
+const query = `
   query {
     posts {
       title
@@ -157,7 +157,7 @@ const query = gql`
   }
 `;
 
-const postStream = graphql(query, schema);
+const postStream = graphql(schema, query);
 const PostsList = componentFromStream(propsStream =>
   propsStream.pipe(
     combineLatest(postStream, (props, result) => {

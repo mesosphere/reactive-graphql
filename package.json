@@ -1,5 +1,9 @@
 {
   "name": "reactive-graphql",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mesosphere/reactive-graphql"
+  },
   "main": "./dist/index.js",
   "typings": "dist/index",
   "files": [

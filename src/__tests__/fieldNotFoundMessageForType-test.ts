@@ -1,5 +1,5 @@
 import { GraphQLObjectType, GraphQLString, GraphQLScalarType } from "graphql";
-import { fieldNotFoundMessageForType } from "..";
+import { fieldNotFoundMessageForType } from "../reactive-graphql";
 
 describe("fieldNotFoundMessageForType", () => {
   it("returns a helpful message for null", () => {
