@@ -2,7 +2,7 @@
 
 > GraphQL reactive executor
 
-[![npm version](https://badge.fury.io/js/reactive-graphql.svg)](https://badge.fury.io/js/reactive-graphql)
+[![npm version](https://badge.fury.io/js/reactive-graphql.svg)](https://badge.fury.io/js/reactive-graphql) [![Build Status](https://travis-ci.org/mesosphere/reactive-graphql.svg?branch=master)](https://travis-ci.org/mesosphere/reactive-graphql)
 
 Execute GraphQL queries against reactive resolvers (resolvers that return Observable) to get a reactive results.
 
