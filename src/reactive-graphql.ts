@@ -23,6 +23,8 @@ import {
   parse
 } from "graphql";
 
+import isNullish from './jstutils/isNullish';
+
 // WARNING: This is NOT a spec complete graphql implementation
 // https://facebook.github.io/graphql/October2016/
 
@@ -135,7 +137,9 @@ export default function graphql<T = object>(
         context,
         variables,
         parent
-      );
+      )
+      // If result value is null-ish (null, undefined, or NaN) then return null.
+      .pipe(map(value => isNullish(value) ? null : value));
 
       // Directly return the leaf nodes
       if (definition.selectionSet === undefined) {
