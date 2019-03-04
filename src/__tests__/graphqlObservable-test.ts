@@ -335,7 +335,7 @@ describe("graphqlObservable", function() {
       m.expect(result.pipe(take(1))).toBeObservable(expected);
     });
 
-    itMarbles.only("resolves using root value", function(m) {
+    itMarbles("resolves using root value", function(m) {
       const query = gql`
         query {
           launched {
