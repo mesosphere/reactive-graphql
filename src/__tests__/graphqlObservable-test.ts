@@ -99,6 +99,7 @@ const fieldResolverSchema = makeExecutableSchema({
 
     type Item {
       nodeFieldResolver: ObjectValue!
+      nullableNodeFieldResolver: ObjectValue
       giveMeTheParentFieldResolver: ObjectValue!
       giveMeTheArgsFieldResolver(arg: String!): ObjectValue!
       giveMeTheContextFieldResolver: ObjectValue!
@@ -138,6 +139,9 @@ const fieldResolverSchema = makeExecutableSchema({
     Item: {
       nodeFieldResolver() {
         return of({ value: "I am a node field resolver" });
+      },
+      nullableNodeFieldResolver() {
+        return null;
       },
       giveMeTheParentFieldResolver(parent) {
         return of({ value: JSON.stringify(parent) });
@@ -480,6 +484,29 @@ describe("graphqlObservable", function() {
               data: {
                 item: {
                   nodeFieldResolver: { value: "I am a node field resolver" }
+                }
+              }
+            }
+          });
+          const result = graphql(fieldResolverSchema, query, null, {});
+          m.expect(result.pipe(take(1))).toBeObservable(expected);
+        });
+
+        itMarbles.only("if nullable field resolver returns null, it resolves null", function(m) {
+          const query = gql`
+            query {
+              item {
+                nullableNodeFieldResolver {
+                  value
+                }
+              }
+            }
+          `;
+          const expected = m.cold("(a|)", {
+            a: {
+              data: {
+                item: {
+                  nullableNodeFieldResolver: null
                 }
               }
             }
