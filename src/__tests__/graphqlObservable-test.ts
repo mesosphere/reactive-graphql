@@ -492,7 +492,7 @@ describe("graphqlObservable", function() {
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
-        itMarbles.only("if nullable field resolver returns null, it resolves null", function(m) {
+        itMarbles("if nullable field resolver returns null, it resolves null", function(m) {
           const query = gql`
             query {
               item {
