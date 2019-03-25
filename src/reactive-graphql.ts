@@ -20,7 +20,8 @@ import {
   isScalarType,
   isEnumType,
   isObjectType,
-  parse
+  isNonNullType,
+  parse,
 } from "graphql";
 
 import isNullish from './jstutils/isNullish';
@@ -149,7 +150,10 @@ export default function graphql<T = object>(
       return resolvedObservable.pipe(
         concatMap(emitted => {
           if (!emitted) {
-            return throwObservable("resolver emitted empty value");
+            if (isNonNullType(type)) {
+              return throwObservable(`resolver for ${field.name} emitted empty value`);
+            }
+            return of(null);
           }
 
           if (emitted instanceof Array) {
