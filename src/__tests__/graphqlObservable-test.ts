@@ -254,7 +254,7 @@ describe("graphqlObservable", function() {
         }
       `;
 
-      const expectedData = [{ name: "apollo11" }, { name: "challenger" }];
+      const expectedData = [{ name: "apollo11", firstFlight: null }, { name: "challenger", firstFlight: null }];
       const dataSource = of(expectedData);
       const expected = m.cold("(a|)", {
         a: { data: { launched: [expectedData[0]] } }
@@ -286,7 +286,7 @@ describe("graphqlObservable", function() {
         }
       `;
 
-      const expectedData = [{ name: "apollo13" }, { name: "challenger" }];
+      const expectedData = [{ name: "apollo13", firstFlight: null }, { name: "challenger", firstFlight: null }];
       const dataSource = of(expectedData);
       const expected = m.cold("(a|)", {
         a: { data: { launched: [expectedData[0]] } }
@@ -404,8 +404,7 @@ describe("graphqlObservable", function() {
           m.expect(result.pipe(take(1))).toBeObservable(expected);
         });
 
-        // fixme: without `only` all tests pass 🤔
-        itMarbles.only("if defined but returns undefined, field is null", function (m) {
+        itMarbles("if defined but returns undefined, field is null", function (m) {
           const query = gql`
             query {
               plain {
