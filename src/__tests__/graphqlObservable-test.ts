@@ -88,6 +88,7 @@ const fieldResolverSchema = makeExecutableSchema({
     type Plain {
       noFieldResolver: String!
       fieldResolver: String!
+      fieldResolvesUndefined: String!
       giveMeTheParentFieldResolver: String!
       giveMeTheArgsFieldResolver(arg: String!): String!
       giveMeTheContextFieldResolver: String!
@@ -125,6 +126,9 @@ const fieldResolverSchema = makeExecutableSchema({
     Plain: {
       fieldResolver() {
         return of("I am a field resolver");
+      },
+      fieldResolvesUndefined() {
+        return of(undefined);
       },
       giveMeTheParentFieldResolver(parent) {
         return of(JSON.stringify(parent));
@@ -250,7 +254,7 @@ describe("graphqlObservable", function() {
         }
       `;
 
-      const expectedData = [{ name: "apollo11" }, { name: "challenger" }];
+      const expectedData = [{ name: "apollo11", firstFlight: null }, { name: "challenger", firstFlight: null }];
       const dataSource = of(expectedData);
       const expected = m.cold("(a|)", {
         a: { data: { launched: [expectedData[0]] } }
@@ -282,7 +286,7 @@ describe("graphqlObservable", function() {
         }
       `;
 
-      const expectedData = [{ name: "apollo13" }, { name: "challenger" }];
+      const expectedData = [{ name: "apollo13", firstFlight: null }, { name: "challenger", firstFlight: null }];
       const dataSource = of(expectedData);
       const expected = m.cold("(a|)", {
         a: { data: { launched: [expectedData[0]] } }
@@ -395,6 +399,21 @@ describe("graphqlObservable", function() {
           `;
           const expected = m.cold("(a|)", {
             a: { data: { plain: { fieldResolver: "I am a field resolver" } } }
+          });
+          const result = graphql(fieldResolverSchema, query, null, {});
+          m.expect(result.pipe(take(1))).toBeObservable(expected);
+        });
+
+        itMarbles("if defined but returns undefined, field is null", function (m) {
+          const query = gql`
+            query {
+              plain {
+                fieldResolvesUndefined
+              }
+            }
+          `;
+          const expected = m.cold("(a|)", {
+            a: { data: { plain: { fieldResolvesUndefined: null } } }
           });
           const result = graphql(fieldResolverSchema, query, null, {});
           m.expect(result.pipe(take(1))).toBeObservable(expected);
