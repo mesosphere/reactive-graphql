@@ -29,14 +29,6 @@ import isNullish from './jstutils/isNullish';
 // WARNING: This is NOT a spec complete graphql implementation
 // https://facebook.github.io/graphql/October2016/
 
-interface TypeMap {
-  [key: string]: GraphQLType;
-}
-
-interface Schema extends GraphQLSchema {
-  _typeMap?: TypeMap;
-}
-
 interface OperationNode {
   operation: "query" | "mutation";
 }
@@ -70,7 +62,7 @@ function isFieldWithResolver(
 }
 
 export default function graphql<T = object>(
-  schema: Schema,
+  schema: GraphQLSchema,
   query: string | DocumentNode,
   rootValue?: any,
   context: object = {},
@@ -92,11 +84,11 @@ export default function graphql<T = object>(
     return throwObservable("query must have a single definition as root");
   }
 
-  if (!schema._typeMap) {
-    return throwObservable("schema must have a typeMap");
+  if (!(schema.getTypeMap instanceof Function)) {
+    return throwObservable("schema must have a getTypeMap method");
   }
 
-  const types = schema._typeMap;
+  const types = schema.getTypeMap();
 
   return resolve(doc.definitions[0], context, variables, rootValue, null).pipe(
     map((data: T) => ({
