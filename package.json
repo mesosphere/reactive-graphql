@@ -19,7 +19,8 @@
     "build": "tsc -p tsconfig.dist.json"
   },
   "dependencies": {
-    "graphql": "^14.0.2"
+    "graphql": "^14.0.2",
+    "iterall": "^1.2.2"
   },
   "peerDependencies": {
     "rxjs": "^6.0.0"
