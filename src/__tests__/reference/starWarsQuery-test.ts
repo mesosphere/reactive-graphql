@@ -136,7 +136,7 @@ describe("Star Wars Query Tests", () => {
   });
 
   // Requires support to nested queries https://jira.mesosphere.com/browse/DCOS-22358
-  describe.skip("Nested Queries", () => {
+  describe("Nested Queries", () => {
     it("Allows us to query for the friends of friends of R2-D2", async () => {
       const query = `
         query NestedQuery {
@@ -274,7 +274,7 @@ describe("Star Wars Query Tests", () => {
     });
 
     // Requires support to errors https://jira.mesosphere.com/browse/DCOS-22062
-    it.skip("Allows us to create a generic query, then pass an invalid ID to get null back", async () => {
+    it("Allows us to create a generic query, then pass an invalid ID to get null back", async () => {
       const query = `
           query humanQuery($id: String!) {
             human(id: $id) {
@@ -366,7 +366,7 @@ describe("Star Wars Query Tests", () => {
     });
 
     // Require support to fragments https://jira.mesosphere.com/browse/DCOS-22356
-    it.skip("Allows us to use a fragment to avoid duplicating content", async () => {
+    it("Allows us to use a fragment to avoid duplicating content", async () => {
       const query = `
           query UseFragment {
             luke: human(id: "1000") {
@@ -400,7 +400,7 @@ describe("Star Wars Query Tests", () => {
 
   // Not supporting introspection
   describe("Using __typename to find the type of an object", () => {
-    it.skip("Allows us to verify that R2-D2 is a droid", async () => {
+    it("Allows us to verify that R2-D2 is a droid", async () => {
       const query = `
         query CheckTypeOfR2 {
           hero {
@@ -421,7 +421,7 @@ describe("Star Wars Query Tests", () => {
     });
 
     // Requires support to introspection https://jira.mesosphere.com/browse/DCOS-22357
-    it.skip("Allows us to verify that Luke is a human", async () => {
+    it("Allows us to verify that Luke is a human", async () => {
       const query = `
         query CheckTypeOfLuke {
           hero(episode: EMPIRE) {
@@ -443,8 +443,8 @@ describe("Star Wars Query Tests", () => {
   });
 
   // Requires support to errors https://jira.mesosphere.com/browse/DCOS-22062
-  describe.skip("Reporting errors raised in resolvers", () => {
-    it("Correctly reports error on accessing secretBackstory", async () => {
+  describe("Reporting errors raised in resolvers", () => {
+    it.only("Correctly reports error on accessing secretBackstory", async () => {
       const query = `
         query HeroNameQuery {
           hero {
