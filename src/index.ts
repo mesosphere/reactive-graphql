@@ -1,1 +1,1 @@
-export { default as graphql } from "./reactive-graphql";
+export { graphql } from "./reactive-graphql";
