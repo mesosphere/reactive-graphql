@@ -1,4 +1,3 @@
-import gql from "graphql-tag";
 import { take } from "rxjs/operators";
 
 import StarWarsSchema from "./starWarsSchema";
@@ -6,12 +5,9 @@ import { graphql as graphqlObservable } from "../../";
 
 const graphql = (schema, query, rootValue?, contextValue?, variableValues?) => {
   return new Promise(resolve => {
-    const taggedQuery = gql`
-      ${query}
-    `;
     graphqlObservable(
       schema,
-      taggedQuery,
+      query,
       rootValue,
       contextValue,
       variableValues
