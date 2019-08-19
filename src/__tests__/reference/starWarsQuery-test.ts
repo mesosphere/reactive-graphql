@@ -1,3 +1,4 @@
+import { ExecutionResult, SourceLocation } from "graphql";
 import { take } from "rxjs/operators";
 
 import StarWarsSchema from "./starWarsSchema";
@@ -17,6 +18,50 @@ const graphql = (schema, query, rootValue?, contextValue?, variableValues?) => {
   });
 };
 
+type SerializedExecutionResult<TData = {[key: string]: any }> = {
+  data?: TData,
+  errors?: ReadonlyArray<{
+    message: string,
+    locations?: ReadonlyArray<SourceLocation>,
+    path?: ReadonlyArray<string | number>
+  }>
+}
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      /**
+       * Will test the equality of GraphQL's `ExecutionResult`.
+       * 
+       * In opposite to the simple `toEqual` it will test the `errors` field
+       * with `GraphqQLErrors`. Specifically it will test the equlity of the
+       * properties `message`, `locations` and `path`.
+       * @param expected 
+       */
+      toEqualExecutionResult<TData = { [key: string]: any }>(expected: SerializedExecutionResult<TData>): R;
+    }
+  }
+}
+
+expect.extend({
+  toEqualExecutionResult<TData>(actual: ExecutionResult<TData>, expected: SerializedExecutionResult<TData>) {
+    let actualSerialized: SerializedExecutionResult<TData> = {
+      data: actual.data,
+    };
+    if(actual.errors) {
+      actualSerialized.errors = actual.errors.map(e => ({
+        message: e.message,
+        locations: e.locations,
+        path: e.path,
+      }))
+    }
+    expect(actualSerialized).toEqual(expected);
+    return {
+      message: 'ok',
+      pass: true,
+    }
+  }
+})
+
 describe("Star Wars Query Tests", () => {
   describe("Basic Queries", () => {
     it("Correctly identifies R2-D2 as the hero of the Star Wars Saga", async () => {
@@ -28,7 +73,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2"
@@ -46,7 +91,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           myrobot: {
             name: "R2-D2"
@@ -68,7 +113,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             id: "2001",
@@ -108,7 +153,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2",
@@ -181,7 +226,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: {
             name: "Luke Skywalker"
@@ -200,7 +245,7 @@ describe("Star Wars Query Tests", () => {
       `;
       const params = { someId: "1000" };
       const result = await graphql(StarWarsSchema, query, null, null, params);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: {
             name: "Luke Skywalker"
@@ -219,7 +264,7 @@ describe("Star Wars Query Tests", () => {
       `;
       const params = { someId: "1002" };
       const result = await graphql(StarWarsSchema, query, null, null, params);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: {
             name: "Han Solo"
@@ -239,7 +284,7 @@ describe("Star Wars Query Tests", () => {
         `;
       const params = { id: "not a valid id" };
       const result = await graphql(StarWarsSchema, query, null, null, params);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: null
         }
@@ -257,7 +302,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker"
@@ -278,7 +323,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker"
@@ -306,7 +351,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker",
@@ -338,7 +383,7 @@ describe("Star Wars Query Tests", () => {
           }
         `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker",
@@ -365,7 +410,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             __typename: "Droid",
@@ -386,7 +431,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             __typename: "Human",
@@ -409,7 +454,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2",
@@ -439,7 +484,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2",
@@ -489,7 +534,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           mainHero: {
             name: "R2-D2",
