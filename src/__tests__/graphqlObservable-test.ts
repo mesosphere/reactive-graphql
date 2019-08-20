@@ -641,40 +641,31 @@ describe("graphqlObservable", function() {
       });
     });
 
-    itMarbles("throwing an error results in an error observable", function(m) {
+    it("throwing an error results in an error in execution result", async function() {
       const query = `
         query {
           throwingResolver
         }
       `;
-      const expected = m.cold(
-        "#",
-        {},
-        new Error(
-          "reactive-graphql: resolver 'throwingResolver' throws this error: 'Error: my personal error'"
-        )
-      );
-      const result = graphql(fieldResolverSchema, query, null, {});
-      m.expect(result.pipe(take(1))).toBeObservable(expected);
+
+      const result = await graphql(fieldResolverSchema, query, null, {}).pipe(take(1)).toPromise();
+      expect(result).toHaveProperty('errors');
+      expect(result.errors![0].message).toBe('my personal error');
+      expect(result.errors![0].path).toEqual(['throwingResolver']);
+
     });
 
-    itMarbles(
-      "accessing an unknown query field results in an error observable",
-      function(m) {
+    it(
+      "accessing an unknown query field results in an error in execution result",
+      async function() {
         const query = `
           query {
             youDontKnowMe
           }
         `;
-        const expected = m.cold(
-          "#",
-          {},
-          new Error(
-            "reactive-graphql: field 'youDontKnowMe' was not found on type 'Query'. The only fields found in this Object are: plain,item,nested,throwingResolver."
-          )
-        );
-        const result = graphql(fieldResolverSchema, query, null, {});
-        m.expect(result.pipe(take(1))).toBeObservable(expected);
+        const result = await graphql(fieldResolverSchema, query, null, {}).pipe(take(1)).toPromise();
+        expect(result).toHaveProperty('errors');
+        expect(result.errors![0].message).toBe('Cannot query field \"youDontKnowMe\" on type \"Query\".')
       }
     );
   });
