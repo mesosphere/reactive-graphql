@@ -259,7 +259,7 @@ describe("graphqlObservable", function() {
         a: { data: { launched: [expectedData[0]] } }
       });
 
-      const nameFilter = of("apollo11");
+      const nameFilter = "apollo11";
       const result = graphql(
         schema,
         query,
