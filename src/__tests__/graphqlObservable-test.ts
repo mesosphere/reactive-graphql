@@ -244,8 +244,8 @@ describe("graphqlObservable", function() {
     });
 
     itMarbles("filters by variable argument", function(m) {
-        query {
       const query = `
+        query($nameFilter: String) {
           launched(name: $nameFilter) {
             name
             firstFlight
@@ -737,8 +737,8 @@ describe("graphqlObservable", function() {
     );
 
     itMarbles("accept alias name", function(m) {
-        mutation {
       const mutation = `
+        mutation ($name: String){
           shut: createShuttle(name: $name) {
             name
           }
