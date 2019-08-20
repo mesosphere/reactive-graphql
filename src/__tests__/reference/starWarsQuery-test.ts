@@ -444,7 +444,7 @@ describe("Star Wars Query Tests", () => {
 
   // Requires support to errors https://jira.mesosphere.com/browse/DCOS-22062
   describe("Reporting errors raised in resolvers", () => {
-    it.only("Correctly reports error on accessing secretBackstory", async () => {
+    it("Correctly reports error on accessing secretBackstory", async () => {
       const query = `
         query HeroNameQuery {
           hero {
