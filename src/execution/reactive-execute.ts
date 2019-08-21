@@ -723,16 +723,16 @@ function completeObjectValue(
   );
 }
 
-  function invalidReturnTypeError(
-    returnType: GraphQLObjectType,
-    result: any,
-    fieldNodes: ReadonlyArray<FieldNode>,
-  ): GraphQLError {
-    return new GraphQLError(
-      `Expected value of type "${returnType.name}" but got: ${inspect(result)}.`,
-      fieldNodes,
-    );
-  }
+function invalidReturnTypeError(
+  returnType: GraphQLObjectType,
+  result: any,
+  fieldNodes: ReadonlyArray<FieldNode>,
+): GraphQLError {
+  return new GraphQLError(
+    `Expected value of type "${returnType.name}" but got: ${inspect(result)}.`,
+    fieldNodes,
+  );
+}
 
 function collectAndExecuteSubfields(
   exeContext: ExecutionContext,
