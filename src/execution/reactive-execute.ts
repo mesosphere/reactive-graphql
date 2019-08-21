@@ -692,20 +692,21 @@ function completeObjectValue(
     const isTypeOf = returnType.isTypeOf(result, exeContext.contextValue, info);
 
     if (isTypeOf instanceof Promise) {
-      // todo find a way to implement that
-      throw new Error('Not implemented')
-      // return isTypeOf.then(resolvedIsTypeOf => {
-      //   if (!resolvedIsTypeOf) {
-      //     throw invalidReturnTypeError(returnType, result, fieldNodes);
-      //   }
-      //   return collectAndExecuteSubfields(
-      //     exeContext,
-      //     returnType,
-      //     fieldNodes,
-      //     path,
-      //     result,
-      //   );
-      // });
+      return mapPromiseToObservale(
+        isTypeOf,
+        resolvedIsTypeOf => {
+          if (!resolvedIsTypeOf) {
+            throw invalidReturnTypeError(returnType, result, fieldNodes);
+          }
+
+          return collectAndExecuteSubfields(
+            exeContext,
+            returnType,
+            fieldNodes,
+            path,
+            result,
+          );
+        })
     }
 
     if (!isTypeOf) {
