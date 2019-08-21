@@ -1,6 +1,7 @@
 import { Observable, of, from, isObservable, combineLatest } from "rxjs";
 import { map, catchError, switchMap } from "rxjs/operators";
 import { forEach, isCollection } from "iterall";
+import memoize from "memoizee";
 import {
   ExecutionResult,
   DocumentNode,
@@ -751,9 +752,8 @@ function collectAndExecuteSubfields(
  * type. Memoizing ensures the subfields are not repeatedly calculated, which
  * saves overhead when resolving lists of values.
  */
-// todo memoize
-// const collectSubfields = memoize3(_collectSubfields);
-function collectSubfields(
+const collectSubfields = memoize(_collectSubfields);
+function _collectSubfields(
   exeContext: ExecutionContext,
   returnType: GraphQLObjectType,
   fieldNodes: ReadonlyArray<FieldNode>,
