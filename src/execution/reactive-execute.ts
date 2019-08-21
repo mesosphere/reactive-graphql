@@ -343,7 +343,6 @@ function completeValueCatchingError(
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  // todo: i'm not sure if result could be a plain value
   result: Error | Observable<any>,
 ): Observable<any> {
   if (result instanceof Error) {
@@ -420,7 +419,6 @@ function completeValue(
   result: any,
 ): Observable<any> {
   // If result is an Error, throw a located error.
-  // todo: not sure yet about that
   if (result instanceof Error) {
     throw result;
   }
@@ -533,7 +531,6 @@ function completeListValue(
       fieldNodes,
       info,
       fieldPath,
-      // todo not sure if completeValueCatchingError can take a plain value
       of(item),
     );
     completedResults.push(completedItem);
