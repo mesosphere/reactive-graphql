@@ -1,3 +1,4 @@
+import delay from 'delay';
 import { of } from "rxjs";
 import { take, map, combineLatest } from "rxjs/operators";
 
@@ -756,5 +757,49 @@ describe("graphqlObservable", function() {
 
       m.expect(result).toBeObservable(expected);
     });
+
+    it('respects serial execution of resolvers', async () => {
+      let theNumber = 0;
+      const schema = makeExecutableSchema({
+        typeDefs: `
+        type Mutation {
+          increment: Int!
+        }
+        type Query {
+          theNumber: Int!
+        }
+      `,
+      resolvers: {
+          Mutation: {
+            // atomic resolver
+            increment: async () => {
+              const _theNumber = theNumber;
+              await delay(100);
+              theNumber = _theNumber + 1;
+              return theNumber;
+            }
+          },
+        }
+      });
+
+      const result$ = graphql({
+        schema,
+        source: `
+        mutation {
+          first: increment,
+          second: increment,
+          third: increment,
+        }
+        `,
+      })
+      const result = await result$.pipe(take(1)).toPromise();
+      expect(result).toEqual({
+        data: {
+          first: 1,
+          second: 2, // 1 if not serial
+          third: 3, // 1 if not serial
+        }
+      })
+    })
   });
 });

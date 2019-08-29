@@ -30,6 +30,7 @@
     "@types/graphql": "14.0.2",
     "@types/jest": "23.3.10",
     "@types/memoizee": "^0.4.2",
+    "delay": "^4.3.0",
     "graphql": "14.0.2",
     "graphql-tag": "2.8.0",
     "graphql-tools": "4.0.3",
