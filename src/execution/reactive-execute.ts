@@ -1,5 +1,5 @@
 import { Observable, of, from, isObservable, combineLatest } from "rxjs";
-import { map, catchError, switchMap } from "rxjs/operators";
+import { map, catchError, switchMap, take } from "rxjs/operators";
 import { forEach, isCollection } from "iterall";
 import memoize from "memoizee";
 import {
@@ -205,6 +205,14 @@ function executeOperation(
   }
 }
 
+/**
+ * Implements serial execution part of the spec.
+ * 
+ * For each `field`, we resolve it but wait for the first
+ * value to be emitted before passing to the next field.
+ * Thus, in case of resolver resolving `Promises`, we match
+ * reference implementation's behavior.
+ */
 function executeFieldsSerially(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
@@ -212,14 +220,34 @@ function executeFieldsSerially(
   path: ResponsePath | undefined,
   fields: { [key: string]: FieldNode[]}
 ): Observable<{ [key: string]: any }> {
-  // todo implement seriality
-  return executeFields(
-    exeContext,
-    parentType,
-    sourceValue,
-    path,
-    fields
-  );
+  // similar to Bluebird's `Promise.each`
+  const maybeResult = (async () => {
+    const results: { [key: string]: Observable<any> } = {};
+
+    for (let i = 0, keys = Object.keys(fields); i < keys.length; ++i) {
+      const responseName = keys[i];
+      const fieldNodes = fields[responseName];
+      const fieldPath = addPath(path, responseName);
+      const result = resolveField(
+        exeContext,
+        parentType,
+        sourceValue,
+        fieldNodes,
+        fieldPath,
+      );
+  
+      if (result !== undefined) {
+        results[responseName] = result;
+
+        // wait for the first value to be emitted
+        await result.pipe(take(1)).toPromise();
+      }
+    }
+
+    return results;
+  })();
+
+  return mapPromiseToObservale(maybeResult, combinePropsLatest)
 }
 
 function executeFields(
@@ -229,7 +257,7 @@ function executeFields(
   path: ResponsePath | undefined,
   fields: { [key: string]: FieldNode[] }
 ): Observable<{ [key: string]: any }> {
-  const results = {};
+  const results: {[key: string ]: Observable<any> } = {};
 
   for (let i = 0, keys = Object.keys(fields); i < keys.length; ++i) {
     const responseName = keys[i];
