@@ -1,4 +1,4 @@
-import { Observable, of, from, isObservable, combineLatest } from "rxjs";
+import { Observable, of, from, isObservable, combineLatest, throwError } from "rxjs";
 import { map, catchError, switchMap, take } from "rxjs/operators";
 import { forEach, isCollection } from "iterall";
 import memoize from "memoizee";
@@ -346,11 +346,13 @@ function resolveFieldValueOrError<TSource>(
     const result = resolveFn(source, args, contextValue, info);
 
     if (isObservable(result)) {
-      return result;
+      return result
+        .pipe(catchError(err => throwError(asErrorInstance(err))));
     }
 
     if (result instanceof Promise) {
-      return from(result);
+      return from(result)
+        .pipe(catchError(err => throwError(asErrorInstance(err))));
     }
 
     // it lloks like plain value
