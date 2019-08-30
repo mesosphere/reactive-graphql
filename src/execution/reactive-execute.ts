@@ -1,6 +1,6 @@
 import { Observable, of, from, isObservable, combineLatest, throwError } from "rxjs";
 import { map, catchError, switchMap, take } from "rxjs/operators";
-import { forEach, isCollection } from "iterall";
+import { forEach,  isIterable } from "iterall";
 import memoize from "memoizee";
 import {
   ExecutionResult,
@@ -61,9 +61,9 @@ export function execute<TData = ExecutionResultDataDefault>(args: ExecutionArgs)
 export function execute<TData = ExecutionResultDataDefault>(
   schema: GraphQLSchema,
   document: DocumentNode,
-  rootValue?: any,
-  contextValue?: any,
-  variableValues?: Maybe<{ [key: string]: any }>,
+  rootValue?: unknown,
+  contextValue?: unknown,
+  variableValues?: Maybe<{ [key: string]: unknown }>,
   operationName?: Maybe<string>,
   fieldResolver?: Maybe<GraphQLFieldResolver<any, any>>
 ): Observable<ExecutionResult<TData>>;
@@ -101,9 +101,9 @@ export function execute<TData>(
 function executeImpl<TData>(
   schema: GraphQLSchema,
   document: DocumentNode,
-  rootValue?: any,
-  contextValue?: any,
-  variableValues?: Maybe<{ [key: string]: any }>,
+  rootValue?: unknown,
+  contextValue?: unknown,
+  variableValues?: Maybe<{ [key: string]: unknown }>,
   operationName?: Maybe<string>,
   fieldResolver?: Maybe<GraphQLFieldResolver<any, any>>
 ): Observable<ExecutionResult<TData>> {
@@ -151,9 +151,9 @@ function isValidExecutionContext(subject: ReadonlyArray<GraphQLError> | Executio
  */
 function buildResponse<TData>(
   exeContext: ExecutionContext,
-  data: Observable<{ [key: string]: any} | null>
+  data: Observable<{ [key: string]: unknown} | null>
 ): Observable<ExecutionResult<TData>> {
-  // @ts-ignore `'{ [key: string]: any; }' is assignable to the constraint of type 'TData', but 'TData' could be instantiated with a different subtype of constraint '{}'`
+  // @ts-ignore `'{ [key: string]: unknown; }' is assignable to the constraint of type 'TData', but 'TData' could be instantiated with a different subtype of constraint '{}'`
   return data.pipe(map(d => {
     if (exeContext.errors.length === 0 && d !== null) {
       return {
@@ -175,8 +175,8 @@ function buildResponse<TData>(
 function executeOperation(
   exeContext: ExecutionContext,
   operation: OperationDefinitionNode,
-  rootValue: any
-): Observable<({[key: string]: any }) | null> {
+  rootValue: unknown
+): Observable<({ [key: string]: unknown }) | null> {
   const type = getOperationRootType(exeContext.schema, operation);
   const fields = collectFields(
     exeContext,
@@ -216,13 +216,13 @@ function executeOperation(
 function executeFieldsSerially(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
-  sourceValue: any,
+  sourceValue: unknown,
   path: ResponsePath | undefined,
   fields: { [key: string]: FieldNode[]}
-): Observable<{ [key: string]: any }> {
+): Observable<{ [key: string]: unknown }> {
   // similar to Bluebird's `Promise.each`
   const maybeResult = (async () => {
-    const results: { [key: string]: Observable<any> } = {};
+    const results: { [key: string]: Observable<unknown> } = {};
 
     for (let i = 0, keys = Object.keys(fields); i < keys.length; ++i) {
       const responseName = keys[i];
@@ -253,11 +253,11 @@ function executeFieldsSerially(
 function executeFields(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
-  sourceValue: any,
+  sourceValue: unknown,
   path: ResponsePath | undefined,
   fields: { [key: string]: FieldNode[] }
-): Observable<{ [key: string]: any }> {
-  const results: {[key: string ]: Observable<any> } = {};
+): Observable<{ [key: string]: unknown }> {
+  const results: { [key: string]: Observable<unknown> } = {};
 
   for (let i = 0, keys = Object.keys(fields); i < keys.length; ++i) {
     const responseName = keys[i];
@@ -284,10 +284,10 @@ function executeFields(
 function resolveField(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
-  source: any,
+  source: unknown,
   fieldNodes: FieldNode[],
   path: ResponsePath,
-): Observable<any> {
+): Observable<unknown> {
   const fieldNode = fieldNodes[0];
   const fieldName = fieldNode.name.value;
 
@@ -333,7 +333,7 @@ function resolveFieldValueOrError<TSource>(
   resolveFn: GraphQLFieldResolver<TSource, any>,
   source: TSource,
   info: GraphQLResolveInfo
-): (Error | Observable<any>) {
+): (Error | Observable<unknown>) {
   try {
     const args = getArgumentValues(
       fieldDef,
@@ -363,8 +363,8 @@ function resolveFieldValueOrError<TSource>(
 }
 // Sometimes a non-error is thrown, wrap it as an Error instance to ensure a
 // consistent Error interface.
-function asErrorInstance(error: any): Error {
-  return error instanceof Error ? error : new Error(error || undefined);
+function asErrorInstance(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error) || undefined);
 }
 
 function completeValueCatchingError(
@@ -373,8 +373,8 @@ function completeValueCatchingError(
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: Error | Observable<any>,
-): Observable<any> {
+  result: Error | Observable<unknown>,
+): Observable<unknown> {
   if (result instanceof Error) {
     return of(handleFieldError(
       result,
@@ -446,8 +446,8 @@ function completeValue(
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: any,
-): Observable<any> {
+  result: unknown,
+): Observable<unknown> {
   // If result is an Error, throw a located error.
   if (result instanceof Error) {
     throw result;
@@ -541,17 +541,20 @@ function completeListValue(
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: any,
-): Observable<ReadonlyArray<any>> {
+  result: unknown,
+): Observable<ReadonlyArray<unknown>> {
   invariant(
-    isCollection(result),
+    isIterable(result),
     `Expected Iterable, but did not find one for field ${
     info.parentType.name
     }.${info.fieldName}.`,
   );
 
+  // for typescript only: asserts `result` type
+  if (!isIterable(result)) throw new Error('Expected Iterable');
+
   const itemType = returnType.ofType;
-  const completedResults: Observable<any>[] = [];
+  const completedResults: Observable<unknown>[] = [];
 
   forEach(result, (item, index) => {
     const fieldPath = addPath(path, index);
@@ -569,7 +572,7 @@ function completeListValue(
   return combineLatest(completedResults);
 }
 
-function completeLeafValue(returnType: GraphQLLeafType, result: any): Observable<any> {
+function completeLeafValue(returnType: GraphQLLeafType, result: unknown): Observable<unknown> {
   invariant(returnType.serialize, 'Missing serialize method on type');
   const serializedResult = returnType.serialize(result);
   if (isInvalid(serializedResult)) {
@@ -594,18 +597,18 @@ type MaybePromise<T> = T | Promise<T>;
  * isTypeOf for the object being coerced, returning the first type that matches.
  */
 function defaultResolveTypeFn(
-  value: any,
-  contextValue: any,
+  value: unknown,
+  contextValue: unknown,
   info: GraphQLResolveInfo,
   abstractType: GraphQLAbstractType,
 ): MaybePromise<Maybe<GraphQLObjectType> | string> {
   // First, look for `__typename`.
   if (
-    value !== null &&
     typeof value === 'object' &&
-    typeof value.__typename === 'string'
+    value !== null &&
+    typeof value['__typename'] === 'string'
   ) {
-    return value.__typename;
+    return value['__typename'];
   }
 
   // Otherwise, test each possible type.
@@ -643,7 +646,7 @@ function ensureValidRuntimeType(
   returnType: GraphQLAbstractType,
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
-  result: any,
+  result: unknown,
 ): GraphQLObjectType {
   const runtimeType =
     typeof runtimeTypeOrName === 'string'
@@ -679,8 +682,8 @@ function completeAbstractValue(
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: any,
-): Observable<{ [key: string]: any}> {
+  result: unknown,
+): Observable<{ [key: string]: unknown}> {
   const runtimeType = returnType.resolveType
     ? returnType.resolveType(result, exeContext.contextValue, info)
     : defaultResolveTypeFn(result, exeContext.contextValue, info, returnType);
@@ -711,8 +714,8 @@ function completeObjectValue(
   fieldNodes: ReadonlyArray<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: any,
-): Observable<any> {
+  result: unknown,
+): Observable<{[key: string]: unknown}> {
   // If there is an isTypeOf predicate function, call it with the
   // current result. If isTypeOf returns false, then raise an error rather
   // than continuing execution.
@@ -753,7 +756,7 @@ function completeObjectValue(
 
 function invalidReturnTypeError(
   returnType: GraphQLObjectType,
-  result: any,
+  result: unknown,
   fieldNodes: ReadonlyArray<FieldNode>,
 ): GraphQLError {
   return new GraphQLError(
@@ -767,8 +770,8 @@ function collectAndExecuteSubfields(
   returnType: GraphQLObjectType,
   fieldNodes: ReadonlyArray<FieldNode>,
   path: ResponsePath,
-  result: any,
-): Observable<{ [key: string]: any}> {
+  result: unknown,
+): Observable<{ [key: string]: unknown}> {
   // Collect sub-fields to execute to complete this value.
   const subFieldNodes = collectSubfields(exeContext, returnType, fieldNodes);
   return executeFields(exeContext, returnType, result, path, subFieldNodes);

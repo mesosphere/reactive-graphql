@@ -8,7 +8,7 @@ export type GraphQLArgs = {
   source: string | Source;
   rootValue?: unknown;
   contextValue?: unknown;
-  variableValues?: Maybe<{ [key: string]: any }>,
+  variableValues?: Maybe<{ [key: string]: unknown }>,
   operationName?: string | null;
   fieldResolver?: GraphQLFieldResolver<any, any> | null;
 };
@@ -27,7 +27,7 @@ export function graphql<TData>(
   source: Source | string,
   rootValue?: unknown,
   contextValue?: unknown,
-  variableValues?: Maybe<{ [key: string]: any }>,
+  variableValues?: Maybe<{ [key: string]: unknown }>,
   operationName?: string | null,
   fieldResolver?: GraphQLFieldResolver<any, any> | null,
 ): Observable<ExecutionResult<TData>>;
@@ -68,7 +68,7 @@ function graphqlImpl<TData>(
   source: string | Source,
   rootValue?: any,
   contextValue?: any,
-  variableValues?: Maybe<{ [key: string]: any }>,
+  variableValues?: Maybe<{ [key: string]: unknown }>,
   operationName?: string | null,
   fieldResolver?: GraphQLFieldResolver<any, any> | null,
 ): Observable<ExecutionResult<TData>> {
