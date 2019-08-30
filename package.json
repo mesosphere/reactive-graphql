@@ -21,7 +21,8 @@
   "dependencies": {
     "graphql": "^14.0.2",
     "iterall": "^1.2.2",
-    "memoizee": "^0.4.14"
+    "memoizee": "^0.4.14",
+    "util": "^0.12.1"
   },
   "peerDependencies": {
     "rxjs": "^6.0.0"
