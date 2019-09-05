@@ -18,8 +18,8 @@ const graphql = (schema, query, rootValue?, contextValue?, variableValues?) => {
   });
 };
 
-type SerializedExecutionResult<TData = {[key: string]: any }> = {
-  data?: TData,
+type SerializedExecutionResult<TData = {[key: string]: unknown }> = {
+  data?: TData | null,
   errors?: ReadonlyArray<{
     message: string,
     locations?: ReadonlyArray<SourceLocation>,

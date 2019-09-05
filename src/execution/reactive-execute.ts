@@ -30,7 +30,6 @@ import {
 
 import {
   ExecutionResultDataDefault,
-  addPath,
   assertValidExecutionArguments,
   buildExecutionContext,
   ExecutionContext,
@@ -47,6 +46,7 @@ import isInvalid from "../jstutils/isInvalid";
 import inspect from "../jstutils/inspect";
 import isNullish from "../jstutils/isNullish";
 import mapPromiseToObservale from "../rxutils/mapPromiseToObservale";
+import { addPath } from "graphql/jsutils/Path";
 
 
 function isExecutionArgs(
