@@ -1,1 +1,1 @@
-export { execute } from './reactive-execute';
+export { execute } from './execute';

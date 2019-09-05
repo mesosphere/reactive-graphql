@@ -1,6 +1,6 @@
 export {
   graphql
-} from './reactive-graphql';
+} from './graphql';
 
 export {
   execute,

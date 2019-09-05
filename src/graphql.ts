@@ -1,5 +1,5 @@
 import { Observable, of } from "rxjs";
-import { execute } from "./execution/reactive-execute";
+import { execute } from "./execution/execute";
 import { ExecutionResult, validateSchema, parse, validate, GraphQLSchema, Source, GraphQLFieldResolver, DocumentNode } from "graphql";
 import Maybe from "graphql/tsutils/Maybe";
 
