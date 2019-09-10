@@ -1,3 +1,13 @@
+/**
+ * `execute.ts` is the equivalent of `graphql-js`'s `src/execution/execute.js`:
+ * it follows the same structure and same function names.
+ * 
+ * The implementation of each function is very close to its sibling in `graphql-js`
+ * and, for the most part, is just adapted for reactive execution (dealing with `Observable`).
+ * Some functions are just copy-pasted because they did not require any change
+ * but could not be imported from `graphql-js`.
+ * Some functions are not present because they could be imported from `graphql-js`.
+ */
 import { Observable, of, from, isObservable, combineLatest, throwError } from "rxjs";
 import { map, catchError, switchMap, take } from "rxjs/operators";
 import { forEach,  isIterable } from "iterall";
@@ -38,6 +48,7 @@ import {
   getFieldDef,
 } from 'graphql/execution/execute';
 import Maybe from 'graphql/tsutils/Maybe';
+import { addPath } from "graphql/jsutils/Path";
 import combinePropsLatest from "../rxutils/combinePropsLatest";
 import { getArgumentValues } from "graphql/execution/values";
 import { locatedError } from "graphql/error";
@@ -46,16 +57,14 @@ import isInvalid from "../jstutils/isInvalid";
 import inspect from "../jstutils/inspect";
 import isNullish from "../jstutils/isNullish";
 import mapPromiseToObservale from "../rxutils/mapPromiseToObservale";
-import { addPath } from "graphql/jsutils/Path";
 
-
-function isExecutionArgs(
-  _argsOrSchema: GraphQLSchema | ExecutionArgs,
-  args: IArguments
-): _argsOrSchema is ExecutionArgs {
-  return args.length === 1;
-}
-
+/**
+ * Implements the "Evaluating requests" section of the GraphQL specification.
+ * 
+ * Returns a RxJS's `Observable` of `ExecutionResult`.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `execute`.
+ */
 export function execute<TData = ExecutionResultDataDefault>(args: ExecutionArgs)
   : Observable<ExecutionResult<TData>>;
 export function execute<TData = ExecutionResultDataDefault>(
@@ -67,7 +76,6 @@ export function execute<TData = ExecutionResultDataDefault>(
   operationName?: Maybe<string>,
   fieldResolver?: Maybe<GraphQLFieldResolver<any, any>>
 ): Observable<ExecutionResult<TData>>;
-
 export function execute<TData>(
   argsOrSchema,
   document?,
@@ -96,6 +104,13 @@ export function execute<TData>(
       operationName,
       fieldResolver,
     );
+}
+
+function isExecutionArgs(
+  _argsOrSchema: GraphQLSchema | ExecutionArgs,
+  args: IArguments
+): _argsOrSchema is ExecutionArgs {
+  return args.length === 1;
 }
 
 function executeImpl<TData>(
@@ -127,18 +142,15 @@ function executeImpl<TData>(
     return of({ errors: exeContext });
   }
 
-  // Return a Promise that will eventually resolve to the data described by
-  // The "Response" section of the GraphQL specification.
-  //
-  // If errors are encountered while executing a GraphQL field, only that
-  // field and its descendants will be omitted, and sibling fields will still
-  // be executed. An execution which encounters errors will still result in a
-  // resolved Promise.
   const data = executeOperation(exeContext, exeContext.operation, rootValue);
   return buildResponse<TData>(exeContext, data);
 }
+
 /**
- * Retur true if subject is a valid `ExecutionContext` and not array of `GraphQLError`.
+ * Returns true if subject is a valid `ExecutionContext` and not array of `GraphQLError`.
+ * 
+ * Note: reference implementation does a `Array.isArray` in `executeImpl` function body. In comparison,
+ * `isValidExecutionContext` ensures typing correctness with type assertion.
  * @param subject value to be tested
  */
 function isValidExecutionContext(subject: ReadonlyArray<GraphQLError> | ExecutionContext): subject is ExecutionContext {
@@ -146,8 +158,10 @@ function isValidExecutionContext(subject: ReadonlyArray<GraphQLError> | Executio
 }
 
 /**
- * Given a completed execution context and Observable data, build the { errors, data }
+ * Given a completed execution context and data as Observable, build the `{ errors, data }`
  * response defined by the "Response" section of the GraphQL specification.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `buildResponse`.
  */
 function buildResponse<TData>(
   exeContext: ExecutionContext,
@@ -162,7 +176,6 @@ function buildResponse<TData>(
     } else {
       return {
         errors: exeContext.errors,
-        // @ts-ignore seems to be ok to have `null` in `data`
         data: d,
       }
     }
@@ -171,6 +184,9 @@ function buildResponse<TData>(
 
 /**
  * Implements the "Evaluating operations" section of the spec.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `executeOperation`. The difference lies
+ * in the fact that, here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value).
  */
 function executeOperation(
   exeContext: ExecutionContext,
@@ -206,11 +222,18 @@ function executeOperation(
 }
 
 /**
- * Implements serial execution part of the spec.
+ * Implements the "Evaluating selection sets" section of the spec for "write" mode,
+ * ie with serial execution.
  * 
- * For each `field`, we resolve it but wait for the first
- * value to be emitted before passing to the next field.
- * Thus, in case of resolver resolving `Promises`, we match
+ * Note: reactive equivalent of `graphql-js`'s `executeFieldsSerially`. The difference
+ * lies in the fact that:
+ * - here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value)
+ * - in `graphql-js`, serial execution is implemented by waiting, one by one, for the
+ * resolution of the `Promise` returned by the resolution of each `field`. Here we wait
+ * for the first value of the resolved `Observable` to be emited before passing to
+ * the next field resolution.
+ *
+ * Thus, in case of resolvers resolving `Promises`, we match
  * reference implementation's behavior.
  */
 function executeFieldsSerially(
@@ -250,6 +273,13 @@ function executeFieldsSerially(
   return mapPromiseToObservale(maybeResult, combinePropsLatest)
 }
 
+/**
+ * Implements the "Evaluating selection sets" section of the spec
+ * for "read" mode.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `executeFields`. The difference lies
+ * in the fact that, here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value).
+ */
 function executeFields(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
@@ -279,8 +309,12 @@ function executeFields(
   return combinePropsLatest(results);
 }
 
-// might not need to be imported: shouldIncludeNode, doesFragmentConditionMatch, getFieldEntryKey
-
+/**
+ * Resolves the field on the given source object.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `resolveField`. The difference lies
+ * in the fact that, here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value).
+ */
 function resolveField(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
@@ -325,7 +359,10 @@ function resolveField(
   );
 }
 
-// might not be needed
+/**
+ * Note: reactive equivalent of `graphql-js`'s `resolveFieldValueOrError`. The difference lies
+ * in the fact that, here, a RxJS's `Observable` is returned.
+ */
 function resolveFieldValueOrError<TSource>(
   exeContext: ExecutionContext,
   fieldDef: GraphQLField<TSource, any>,
@@ -361,12 +398,24 @@ function resolveFieldValueOrError<TSource>(
     return asErrorInstance(err);
   }
 }
-// Sometimes a non-error is thrown, wrap it as an Error instance to ensure a
-// consistent Error interface.
+
+/**
+ * Sometimes a non-error is thrown, wrap it as an Error instance to ensure a
+ * consistent Error interface.
+ * 
+ * Note: copy-paste of `graphql-js`'s `asErrorInstance` in `execute.js`.
+ */
 function asErrorInstance(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error) || undefined);
 }
 
+/**
+ * This is a small wrapper around completeValue which detects and logs errors
+ * in the execution context.
+ *
+ * Note: reactive equivalent of `graphql-js`'s `completeValueCatchingError`. The difference lies
+ * in the fact that, here, a RxJS's `Observable` is returned.
+ */
 function completeValueCatchingError(
   exeContext: ExecutionContext,
   returnType: GraphQLOutputType,
@@ -415,6 +464,9 @@ function completeValueCatchingError(
     }
 }
 
+/**
+ * Note: copy-paste of `graphql-js`'s `handleFieldError`.
+ */
 function handleFieldError(
   rawError: Error,
   fieldNodes: ReadonlyArray<FieldNode>,
@@ -440,6 +492,13 @@ function handleFieldError(
   return null;
 }
 
+/**
+ * Implements the instructions for completeValue as defined in the
+ * "Field entries" section of the spec.
+ *
+ * Note: reactive equivalent of `graphql-js`'s `completeValue`. The difference lies
+ * in the fact that, here, we deal with RxJS's `Observable` and an `Observable` is returned.
+ */
 function completeValue(
   exeContext: ExecutionContext,
   returnType: GraphQLOutputType,
@@ -534,6 +593,9 @@ function completeValue(
 /**
  * Complete a list value by completing each item in the list with the
  * inner type
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `completeListValue`. The difference lies
+ * in the fact that, here, we deal with RxJS's `Observable` and an `Observable` is returned.
  */
 function completeListValue(
   exeContext: ExecutionContext,
@@ -571,7 +633,13 @@ function completeListValue(
 
   return combineLatest(completedResults);
 }
-
+/**
+ * Complete a Scalar or Enum by serializing to a valid value, returning
+ * null if serialization is not possible.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `completeLeafValue`. The difference lies
+ * in the fact that, here, an `Observable` is returned.
+ */
 function completeLeafValue(returnType: GraphQLLeafType, result: unknown): Observable<unknown> {
   invariant(returnType.serialize, 'Missing serialize method on type');
   const serializedResult = returnType.serialize(result);
@@ -582,6 +650,199 @@ function completeLeafValue(returnType: GraphQLLeafType, result: unknown): Observ
     );
   }
   return of(serializedResult);
+}
+/**
+ * Complete a value of an abstract type by determining the runtime object type
+ * of that value, then complete the value for that type.
+ * 
+ * Note: reactive equivalent of `graphql-js`'s `completeAbstractValue`. The difference lies
+ * in the fact that, here, we deal with asychronisity in a Observable fashion and that
+ * an `Observable` is returned.
+ */
+function completeAbstractValue(
+  exeContext: ExecutionContext,
+  returnType: GraphQLAbstractType,
+  fieldNodes: ReadonlyArray<FieldNode>,
+  info: GraphQLResolveInfo,
+  path: ResponsePath,
+  result: unknown,
+): Observable<{ [key: string]: unknown }> {
+  const runtimeType = returnType.resolveType
+    ? returnType.resolveType(result, exeContext.contextValue, info)
+    : defaultResolveTypeFn(result, exeContext.contextValue, info, returnType);
+
+  return mapPromiseToObservale(
+    Promise.resolve(runtimeType),
+    resolvedRuntimeType => completeObjectValue(
+      exeContext,
+      ensureValidRuntimeType(
+        resolvedRuntimeType,
+        exeContext,
+        returnType,
+        fieldNodes,
+        info,
+        result,
+      ),
+      fieldNodes,
+      info,
+      path,
+      result,
+    )
+  )
+}
+
+/**
+ * Note: copy-pasted from `graphql-js`'s `ensureValidRuntimeType`.
+ */
+function ensureValidRuntimeType(
+  runtimeTypeOrName: Maybe<GraphQLObjectType> | string,
+  exeContext: ExecutionContext,
+  returnType: GraphQLAbstractType,
+  fieldNodes: ReadonlyArray<FieldNode>,
+  info: GraphQLResolveInfo,
+  result: unknown,
+): GraphQLObjectType {
+  const runtimeType =
+    typeof runtimeTypeOrName === 'string'
+      ? exeContext.schema.getType(runtimeTypeOrName)
+      : runtimeTypeOrName;
+
+  if (!isObjectType(runtimeType)) {
+    throw new GraphQLError(
+      `Abstract type ${returnType.name} must resolve to an Object type at ` +
+      `runtime for field ${info.parentType.name}.${info.fieldName} with ` +
+      `value ${inspect(result)}, received "${inspect(runtimeType)}". ` +
+      `Either the ${returnType.name} type should provide a "resolveType" ` +
+      'function or each possible type should provide an "isTypeOf" function.',
+      fieldNodes,
+    );
+  }
+
+  if (!exeContext.schema.isPossibleType(returnType, runtimeType)) {
+    throw new GraphQLError(
+      `Runtime Object type "${runtimeType.name}" is not a possible type ` +
+      `for "${returnType.name}".`,
+      fieldNodes,
+    );
+  }
+
+  return runtimeType;
+}
+
+/**
+ * Complete an Object value by executing all sub-selections.
+ *
+ * Note: reactive equivalent of `graphql-js`'s `completeObjectValue`. The difference lies
+ * in the fact that, here, we deal with asychronisity in a Observable fashion and that
+ * an `Observable` is returned.
+ */
+function completeObjectValue(
+  exeContext: ExecutionContext,
+  returnType: GraphQLObjectType,
+  fieldNodes: ReadonlyArray<FieldNode>,
+  info: GraphQLResolveInfo,
+  path: ResponsePath,
+  result: unknown,
+): Observable<{ [key: string]: unknown }> {
+  // If there is an isTypeOf predicate function, call it with the
+  // current result. If isTypeOf returns false, then raise an error rather
+  // than continuing execution.
+  if (returnType.isTypeOf) {
+    const isTypeOf = returnType.isTypeOf(result, exeContext.contextValue, info);
+
+    if (isTypeOf instanceof Promise) {
+      return mapPromiseToObservale(
+        isTypeOf,
+        resolvedIsTypeOf => {
+          if (!resolvedIsTypeOf) {
+            throw invalidReturnTypeError(returnType, result, fieldNodes);
+          }
+
+          return collectAndExecuteSubfields(
+            exeContext,
+            returnType,
+            fieldNodes,
+            path,
+            result,
+          );
+        })
+    }
+
+    if (!isTypeOf) {
+      throw invalidReturnTypeError(returnType, result, fieldNodes);
+    }
+  }
+
+  return collectAndExecuteSubfields(
+    exeContext,
+    returnType,
+    fieldNodes,
+    path,
+    result,
+  );
+}
+
+/**
+ * 
+ * Note: copy-pasted from `graphql-js`.
+ */
+function invalidReturnTypeError(
+  returnType: GraphQLObjectType,
+  result: unknown,
+  fieldNodes: ReadonlyArray<FieldNode>,
+): GraphQLError {
+  return new GraphQLError(
+    `Expected value of type "${returnType.name}" but got: ${inspect(result)}.`,
+    fieldNodes,
+  );
+}
+
+/**
+ *
+ * Note: reactive equivalent of `graphql-js`'s `collectAndExecuteSubfields`. The difference lies
+ * in the fact that, here, an `Observable` is returned.
+ */
+function collectAndExecuteSubfields(
+  exeContext: ExecutionContext,
+  returnType: GraphQLObjectType,
+  fieldNodes: ReadonlyArray<FieldNode>,
+  path: ResponsePath,
+  result: unknown,
+): Observable<{ [key: string]: unknown }> {
+  // Collect sub-fields to execute to complete this value.
+  const subFieldNodes = collectSubfields(exeContext, returnType, fieldNodes);
+  return executeFields(exeContext, returnType, result, path, subFieldNodes);
+}
+
+/**
+ * A memoized collection of relevant subfields with regard to the return
+ * type. Memoizing ensures the subfields are not repeatedly calculated, which
+ * saves overhead when resolving lists of values.
+ * 
+ * Note: copy-pasted from `graphql-js`. The difference lies in the fact that
+ * `graphql-js` implements its own memoization, while we use `memoizee` package.
+ */
+const collectSubfields = memoize(_collectSubfields);
+function _collectSubfields(
+  exeContext: ExecutionContext,
+  returnType: GraphQLObjectType,
+  fieldNodes: ReadonlyArray<FieldNode>,
+): { [key: string]: FieldNode[] } {
+  let subFieldNodes = Object.create(null);
+  const visitedFragmentNames = Object.create(null);
+  for (let i = 0; i < fieldNodes.length; i++) {
+    const selectionSet = fieldNodes[i].selectionSet;
+    if (selectionSet) {
+      subFieldNodes = collectFields(
+        exeContext,
+        returnType,
+        selectionSet,
+        subFieldNodes,
+        visitedFragmentNames,
+      );
+    }
+  }
+  return subFieldNodes;
 }
 
 type MaybePromise<T> = T | Promise<T>;
@@ -595,6 +856,7 @@ type MaybePromise<T> = T | Promise<T>;
  *
  * Otherwise, test each possible type for the abstract type by calling
  * isTypeOf for the object being coerced, returning the first type that matches.
+ * Note: copy-pasted from `graphql-js`
  */
 function defaultResolveTypeFn(
   value: unknown,
@@ -638,169 +900,4 @@ function defaultResolveTypeFn(
       }
     });
   }
-}
-
-function ensureValidRuntimeType(
-  runtimeTypeOrName: Maybe<GraphQLObjectType> | string,
-  exeContext: ExecutionContext,
-  returnType: GraphQLAbstractType,
-  fieldNodes: ReadonlyArray<FieldNode>,
-  info: GraphQLResolveInfo,
-  result: unknown,
-): GraphQLObjectType {
-  const runtimeType =
-    typeof runtimeTypeOrName === 'string'
-      ? exeContext.schema.getType(runtimeTypeOrName)
-      : runtimeTypeOrName;
-
-  if (!isObjectType(runtimeType)) {
-    throw new GraphQLError(
-      `Abstract type ${returnType.name} must resolve to an Object type at ` +
-      `runtime for field ${info.parentType.name}.${info.fieldName} with ` +
-      `value ${inspect(result)}, received "${inspect(runtimeType)}". ` +
-      `Either the ${returnType.name} type should provide a "resolveType" ` +
-      'function or each possible type should provide an "isTypeOf" function.',
-      fieldNodes,
-    );
-  }
-
-  if (!exeContext.schema.isPossibleType(returnType, runtimeType)) {
-    throw new GraphQLError(
-      `Runtime Object type "${runtimeType.name}" is not a possible type ` +
-      `for "${returnType.name}".`,
-      fieldNodes,
-    );
-  }
-
-  return runtimeType;
-}
-
-
-function completeAbstractValue(
-  exeContext: ExecutionContext,
-  returnType: GraphQLAbstractType,
-  fieldNodes: ReadonlyArray<FieldNode>,
-  info: GraphQLResolveInfo,
-  path: ResponsePath,
-  result: unknown,
-): Observable<{ [key: string]: unknown}> {
-  const runtimeType = returnType.resolveType
-    ? returnType.resolveType(result, exeContext.contextValue, info)
-    : defaultResolveTypeFn(result, exeContext.contextValue, info, returnType);
-
-  return mapPromiseToObservale(
-    Promise.resolve(runtimeType),
-    resolvedRuntimeType => completeObjectValue(
-      exeContext,
-      ensureValidRuntimeType(
-        resolvedRuntimeType,
-        exeContext,
-        returnType,
-        fieldNodes,
-        info,
-        result,
-      ),
-      fieldNodes,
-      info,
-      path,
-      result,
-    )
-  )
-}
-
-function completeObjectValue(
-  exeContext: ExecutionContext,
-  returnType: GraphQLObjectType,
-  fieldNodes: ReadonlyArray<FieldNode>,
-  info: GraphQLResolveInfo,
-  path: ResponsePath,
-  result: unknown,
-): Observable<{[key: string]: unknown}> {
-  // If there is an isTypeOf predicate function, call it with the
-  // current result. If isTypeOf returns false, then raise an error rather
-  // than continuing execution.
-  if (returnType.isTypeOf) {
-    const isTypeOf = returnType.isTypeOf(result, exeContext.contextValue, info);
-
-    if (isTypeOf instanceof Promise) {
-      return mapPromiseToObservale(
-        isTypeOf,
-        resolvedIsTypeOf => {
-          if (!resolvedIsTypeOf) {
-            throw invalidReturnTypeError(returnType, result, fieldNodes);
-          }
-
-          return collectAndExecuteSubfields(
-            exeContext,
-            returnType,
-            fieldNodes,
-            path,
-            result,
-          );
-        })
-    }
-
-    if (!isTypeOf) {
-      throw invalidReturnTypeError(returnType, result, fieldNodes);
-    }    
-  }
-
-  return collectAndExecuteSubfields(
-    exeContext,
-    returnType,
-    fieldNodes,
-    path,
-    result,
-  );
-}
-
-function invalidReturnTypeError(
-  returnType: GraphQLObjectType,
-  result: unknown,
-  fieldNodes: ReadonlyArray<FieldNode>,
-): GraphQLError {
-  return new GraphQLError(
-    `Expected value of type "${returnType.name}" but got: ${inspect(result)}.`,
-    fieldNodes,
-  );
-}
-
-function collectAndExecuteSubfields(
-  exeContext: ExecutionContext,
-  returnType: GraphQLObjectType,
-  fieldNodes: ReadonlyArray<FieldNode>,
-  path: ResponsePath,
-  result: unknown,
-): Observable<{ [key: string]: unknown}> {
-  // Collect sub-fields to execute to complete this value.
-  const subFieldNodes = collectSubfields(exeContext, returnType, fieldNodes);
-  return executeFields(exeContext, returnType, result, path, subFieldNodes);
-}
-
-/**
- * A memoized collection of relevant subfields with regard to the return
- * type. Memoizing ensures the subfields are not repeatedly calculated, which
- * saves overhead when resolving lists of values.
- */
-const collectSubfields = memoize(_collectSubfields);
-function _collectSubfields(
-  exeContext: ExecutionContext,
-  returnType: GraphQLObjectType,
-  fieldNodes: ReadonlyArray<FieldNode>,
-): { [key: string]: FieldNode[] } {
-  let subFieldNodes = Object.create(null);
-  const visitedFragmentNames = Object.create(null);
-  for (let i = 0; i < fieldNodes.length; i++) {
-    const selectionSet = fieldNodes[i].selectionSet;
-    if (selectionSet) {
-      subFieldNodes = collectFields(
-        exeContext,
-        returnType,
-        selectionSet,
-        subFieldNodes,
-        visitedFragmentNames,
-      );
-    }
-  }
-  return subFieldNodes;
 }
