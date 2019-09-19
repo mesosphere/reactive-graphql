@@ -9,7 +9,7 @@
  * Some functions are not present because they could be imported from `graphql-js`.
  */
 import { Observable, of, from, isObservable, combineLatest, throwError } from "rxjs";
-import { map, catchError, switchMap, take } from "rxjs/operators";
+import { map, catchError, switchMap } from "rxjs/operators";
 import { forEach,  isIterable } from "iterall";
 import memoize from "memoizee";
 import {
@@ -57,6 +57,7 @@ import isInvalid from "../jstutils/isInvalid";
 import inspect from "../jstutils/inspect";
 import isNullish from "../jstutils/isNullish";
 import mapPromiseToObservale from "../rxutils/mapPromiseToObservale";
+import mapToFirstValue from "../rxutils/mapToFirstValue";
 
 /**
  * Implements the "Evaluating requests" section of the GraphQL specification.
@@ -243,34 +244,42 @@ function executeFieldsSerially(
   path: ResponsePath | undefined,
   fields: { [key: string]: FieldNode[]}
 ): Observable<{ [key: string]: unknown }> {
-  // similar to Bluebird's `Promise.each`
-  const maybeResult = (async () => {
-    const results: { [key: string]: Observable<unknown> } = {};
+  const results: { [key: string]: Observable<unknown> } = {};
 
-    for (let i = 0, keys = Object.keys(fields); i < keys.length; ++i) {
-      const responseName = keys[i];
-      const fieldNodes = fields[responseName];
-      const fieldPath = addPath(path, responseName);
-      const result = resolveField(
-        exeContext,
-        parentType,
-        sourceValue,
-        fieldNodes,
-        fieldPath,
-      );
-  
-      if (result !== undefined) {
-        results[responseName] = result;
+  // during iteration, we keep track of the result of the previously
+  // resolved field so that we can queue the resolution of the next field
+  // after the emition of the first value of the previous result.
+  let previousResolvedResult: (Observable<unknown> | undefined);
 
-        // wait for the first value to be emitted
-        await result.pipe(take(1)).toPromise();
-      }
+  for (let i = 0, keys = Object.keys(fields); i < keys.length; ++i) {
+    const responseName = keys[i];
+    const fieldNodes = fields[responseName];
+    const fieldPath = addPath(path, responseName);
+
+    const resolve = () => resolveField(
+      exeContext,
+      parentType,
+      sourceValue,
+      fieldNodes,
+      fieldPath,
+    );
+
+    const result = previousResolvedResult ?
+      // queuing `resolve` after first emition of `previousResolvedResult`
+      // using `mapToFirstValue` to get an Observable that represents this process
+      mapToFirstValue(previousResolvedResult, resolve)
+      :
+      // first iteration: no previous result need to queue after
+      resolve();
+
+    previousResolvedResult = result;
+
+    if (result !== undefined) {
+      results[responseName] = result;
     }
+  }
 
-    return results;
-  })();
-
-  return mapPromiseToObservale(maybeResult, combinePropsLatest)
+  return combinePropsLatest(results);
 }
 
 /**
