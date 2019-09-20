@@ -4,8 +4,7 @@ import { TestObservableLike } from "rxjs-marbles/types";
 import { parse } from "graphql";
 import { execute } from "../..";
 
-// verify 
-describe('Execution: Rx subscriptions', () => {
+describe('Execution: Rx subscriptions management', () => {
   describe('subscription/unsubscription sycnhronization of resolved observable with result of query', () => {
     const executeScenario = (
       revolvedValue$: TestObservableLike<string>,
@@ -110,15 +109,9 @@ describe('Execution: Rx subscriptions', () => {
       const currentEmitter$ = m.hot(
         '-A-----B---'
       );
-      const AEmitter = m.hot(
-        'aaaaaaaaaaa'
-      );
-      const BEmitter = m.hot(
-        'bbbbbbbbbbb'
-      );
       const emitter$s = {
-        A: AEmitter,
-        B: BEmitter,
+        A: m.hot('aaaaaaaaaaa'),
+        B: m.hot('bbbbbbbbbbb'),
       }
       m.expect(
         executeScenario(currentEmitter$, emitter$s),
@@ -130,11 +123,11 @@ describe('Execution: Rx subscriptions', () => {
         b: { data: { currentEmitter: { value: 'b' }}},
       }
       )
-      m.expect(AEmitter).toHaveSubscriptions(
+      m.expect(emitter$s.A).toHaveSubscriptions(
       // -A-----B---
         '-^-----!--'
       )
-      m.expect(BEmitter).toHaveSubscriptions(
+      m.expect(emitter$s.B).toHaveSubscriptions(
       // -A-----B---
         '-------^--!'
       )
