@@ -6,8 +6,6 @@
 
 Execute GraphQL queries against reactive resolvers (resolvers that return Observable) to get a reactive results.
 
-_This project aims to become a complete GraphQL implementation based around [RxJS](https://github.com/ReactiveX/rxjs)._
-
 ## Install
 
 ```
@@ -19,13 +17,12 @@ $ npm i reactive-graphql --save
 The usage is very similar to `graphql-js`'s [`graphql`](https://graphql.org/graphql-js/graphql/#graphql) function, except that:
 
 - resolvers can return an Observable
-- the returned value is an Observable
+- the result of a query is an Observable
 
 ```js
+import { graphql } from "reactive-graphql";
 import { makeExecutableSchema } from "graphql-tools";
-import gql from "graphql-tag";
 import { timer } from "rxjs";
-import graphql from "reactive-graphql";
 
 const typeDefs = `
   type Query {
@@ -48,13 +45,13 @@ const schema = makeExecutableSchema({
   resolvers
 });
 
-const query = gql`
+const query = `
   query {
     time
   }
 `;
 
-const stream = graphql(query, schema);
+const stream = graphql(schema, query);
 // stream is an Observable
 stream.subscribe(res => console.log(res));
 ```
@@ -70,20 +67,8 @@ outputs
 ...
 ```
 
-## API
-
-The first argument you pass into `reactive-graphql` is a GraphQL query, either parsed or as string, the second one is an executable schema. You can pass in the root context as an object as a third parameter. The variables can be passed as 4th parameter.
-
-The implementation will always return an Observable.
-If any of the resolvers returns an error the implementation will emit the error on the stream.
-Otherwise the data will be wrapped in a `{ data }` object, like most implementations handle this.
-
 ## Caveats
-
-Unsupported GraphQL features:
-
-- fragments of all kinds
-- subscriptions (as everything is treated as a subscription)
+GraphQL Subscriptions are not supported (see [issue #27](https://github.com/mesosphere/reactive-graphql/issues/27)) as everything is treated as subscriptions.
 
 ## See Also
 
