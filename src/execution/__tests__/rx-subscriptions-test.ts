@@ -69,8 +69,7 @@ describe('Execution: Rx subscriptions', () => {
     }));
   });
 
-  // this isachieved thanks to the usage of `switchMap` operator
-  describe('give up a resolved Observable', () => {
+  describe('giving up a resolved Observable', () => {
     const executeScenario = (
       currentEmitter$: TestObservableLike<string>,
       emitter$s: {
@@ -107,31 +106,35 @@ describe('Execution: Rx subscriptions', () => {
       })
     }
 
-    it('should unsubscribe from it', marbles(m => {
-      const emitter$s = {
-        A: m.hot(
-        'aaaaaaaaaaa'
-      ),
-      B: m.hot(
-        'bbbbbbbbbbb'
-      )};
+    it('should unsubscribe from it (switchMap)', marbles(m => {
       const currentEmitter$ = m.hot(
         '-A-----B---'
       );
+      const AEmitter = m.hot(
+        'aaaaaaaaaaa'
+      );
+      const BEmitter = m.hot(
+        'bbbbbbbbbbb'
+      );
+      const emitter$s = {
+        A: AEmitter,
+        B: BEmitter,
+      }
       m.expect(
         executeScenario(currentEmitter$, emitter$s),
         '^---------!'
       ).toBeObservable(
+      // -A-----B---
         '-aaaaaabbb-', {
         a: { data: { currentEmitter: { value: 'a' }}},
         b: { data: { currentEmitter: { value: 'b' }}},
       }
       )
-      m.expect(emitter$s.A).toHaveSubscriptions(
+      m.expect(AEmitter).toHaveSubscriptions(
       // -A-----B---
         '-^-----!--'
       )
-      m.expect(emitter$s.B).toHaveSubscriptions(
+      m.expect(BEmitter).toHaveSubscriptions(
       // -A-----B---
         '-------^--!'
       )
