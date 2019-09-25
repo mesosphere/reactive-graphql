@@ -9,7 +9,7 @@
   "files": [
     "dist"
   ],
-  "version": "0.0.0-dev+semantic-release",
+  "version": "4.0.0-rc.1",
   "license": "Apache-2.0",
   "scripts": {
     "test": "jest",
