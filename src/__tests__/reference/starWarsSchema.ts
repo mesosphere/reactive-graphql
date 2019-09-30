@@ -185,7 +185,7 @@ const humanType = new GraphQLObjectType({
       type: GraphQLString,
       description: "Where are they from and how they came to be who they are.",
       resolve() {
-        throwError(new Error("secretBackstory is secret."));
+        return throwError(new Error("secretBackstory is secret."));
       }
     }
   }),

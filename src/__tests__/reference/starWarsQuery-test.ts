@@ -1,4 +1,4 @@
-import gql from "graphql-tag";
+import { ExecutionResult, SourceLocation } from "graphql";
 import { take } from "rxjs/operators";
 
 import StarWarsSchema from "./starWarsSchema";
@@ -6,12 +6,9 @@ import { graphql as graphqlObservable } from "../../";
 
 const graphql = (schema, query, rootValue?, contextValue?, variableValues?) => {
   return new Promise(resolve => {
-    const taggedQuery = gql`
-      ${query}
-    `;
     graphqlObservable(
       schema,
-      taggedQuery,
+      query,
       rootValue,
       contextValue,
       variableValues
@@ -20,6 +17,50 @@ const graphql = (schema, query, rootValue?, contextValue?, variableValues?) => {
       .subscribe(resolve);
   });
 };
+
+type SerializedExecutionResult<TData = {[key: string]: unknown }> = {
+  data?: TData | null,
+  errors?: ReadonlyArray<{
+    message: string,
+    locations?: ReadonlyArray<SourceLocation>,
+    path?: ReadonlyArray<string | number>
+  }>
+}
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      /**
+       * Will test the equality of GraphQL's `ExecutionResult`.
+       * 
+       * In opposite to the simple `toEqual` it will test the `errors` field
+       * with `GraphqQLErrors`. Specifically it will test the equlity of the
+       * properties `message`, `locations` and `path`.
+       * @param expected 
+       */
+      toEqualExecutionResult<TData = { [key: string]: any }>(expected: SerializedExecutionResult<TData>): R;
+    }
+  }
+}
+
+expect.extend({
+  toEqualExecutionResult<TData>(actual: ExecutionResult<TData>, expected: SerializedExecutionResult<TData>) {
+    let actualSerialized: SerializedExecutionResult<TData> = {
+      data: actual.data,
+    };
+    if(actual.errors) {
+      actualSerialized.errors = actual.errors.map(e => ({
+        message: e.message,
+        locations: e.locations,
+        path: e.path,
+      }))
+    }
+    expect(actualSerialized).toEqual(expected);
+    return {
+      message: 'ok',
+      pass: true,
+    }
+  }
+})
 
 describe("Star Wars Query Tests", () => {
   describe("Basic Queries", () => {
@@ -32,7 +73,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2"
@@ -50,7 +91,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           myrobot: {
             name: "R2-D2"
@@ -72,7 +113,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             id: "2001",
@@ -95,7 +136,7 @@ describe("Star Wars Query Tests", () => {
   });
 
   // Requires support to nested queries https://jira.mesosphere.com/browse/DCOS-22358
-  describe.skip("Nested Queries", () => {
+  describe("Nested Queries", () => {
     it("Allows us to query for the friends of friends of R2-D2", async () => {
       const query = `
         query NestedQuery {
@@ -112,7 +153,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2",
@@ -185,7 +226,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: {
             name: "Luke Skywalker"
@@ -204,7 +245,7 @@ describe("Star Wars Query Tests", () => {
       `;
       const params = { someId: "1000" };
       const result = await graphql(StarWarsSchema, query, null, null, params);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: {
             name: "Luke Skywalker"
@@ -223,7 +264,7 @@ describe("Star Wars Query Tests", () => {
       `;
       const params = { someId: "1002" };
       const result = await graphql(StarWarsSchema, query, null, null, params);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: {
             name: "Han Solo"
@@ -233,7 +274,7 @@ describe("Star Wars Query Tests", () => {
     });
 
     // Requires support to errors https://jira.mesosphere.com/browse/DCOS-22062
-    it.skip("Allows us to create a generic query, then pass an invalid ID to get null back", async () => {
+    it("Allows us to create a generic query, then pass an invalid ID to get null back", async () => {
       const query = `
           query humanQuery($id: String!) {
             human(id: $id) {
@@ -243,7 +284,7 @@ describe("Star Wars Query Tests", () => {
         `;
       const params = { id: "not a valid id" };
       const result = await graphql(StarWarsSchema, query, null, null, params);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           human: null
         }
@@ -261,7 +302,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker"
@@ -282,7 +323,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker"
@@ -310,7 +351,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker",
@@ -325,7 +366,7 @@ describe("Star Wars Query Tests", () => {
     });
 
     // Require support to fragments https://jira.mesosphere.com/browse/DCOS-22356
-    it.skip("Allows us to use a fragment to avoid duplicating content", async () => {
+    it("Allows us to use a fragment to avoid duplicating content", async () => {
       const query = `
           query UseFragment {
             luke: human(id: "1000") {
@@ -342,7 +383,7 @@ describe("Star Wars Query Tests", () => {
           }
         `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           luke: {
             name: "Luke Skywalker",
@@ -359,7 +400,7 @@ describe("Star Wars Query Tests", () => {
 
   // Not supporting introspection
   describe("Using __typename to find the type of an object", () => {
-    it.skip("Allows us to verify that R2-D2 is a droid", async () => {
+    it("Allows us to verify that R2-D2 is a droid", async () => {
       const query = `
         query CheckTypeOfR2 {
           hero {
@@ -369,7 +410,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             __typename: "Droid",
@@ -380,7 +421,7 @@ describe("Star Wars Query Tests", () => {
     });
 
     // Requires support to introspection https://jira.mesosphere.com/browse/DCOS-22357
-    it.skip("Allows us to verify that Luke is a human", async () => {
+    it("Allows us to verify that Luke is a human", async () => {
       const query = `
         query CheckTypeOfLuke {
           hero(episode: EMPIRE) {
@@ -390,7 +431,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             __typename: "Human",
@@ -402,7 +443,7 @@ describe("Star Wars Query Tests", () => {
   });
 
   // Requires support to errors https://jira.mesosphere.com/browse/DCOS-22062
-  describe.skip("Reporting errors raised in resolvers", () => {
+  describe("Reporting errors raised in resolvers", () => {
     it("Correctly reports error on accessing secretBackstory", async () => {
       const query = `
         query HeroNameQuery {
@@ -413,7 +454,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2",
@@ -443,7 +484,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           hero: {
             name: "R2-D2",
@@ -493,7 +534,7 @@ describe("Star Wars Query Tests", () => {
         }
       `;
       const result = await graphql(StarWarsSchema, query);
-      expect(result).toEqual({
+      expect(result).toEqualExecutionResult({
         data: {
           mainHero: {
             name: "R2-D2",

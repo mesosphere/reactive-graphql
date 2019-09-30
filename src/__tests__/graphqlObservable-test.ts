@@ -1,10 +1,10 @@
+import delay from 'delay';
 import { of } from "rxjs";
 import { take, map, combineLatest } from "rxjs/operators";
 
 import { marbles } from "rxjs-marbles/jest";
 
 import { makeExecutableSchema } from "graphql-tools";
-import gql from "graphql-tag";
 
 import { graphql } from "../";
 
@@ -205,7 +205,7 @@ itMarbles.only = (title, test) => {
 describe("graphqlObservable", function() {
   describe("Query", function() {
     itMarbles("solves listing all fields", function(m) {
-      const query = gql`
+      const query = `
         query {
           launched {
             name
@@ -245,8 +245,8 @@ describe("graphqlObservable", function() {
     });
 
     itMarbles("filters by variable argument", function(m) {
-      const query = gql`
-        query {
+      const query = `
+        query($nameFilter: String) {
           launched(name: $nameFilter) {
             name
             firstFlight
@@ -260,7 +260,7 @@ describe("graphqlObservable", function() {
         a: { data: { launched: [expectedData[0]] } }
       });
 
-      const nameFilter = of("apollo11");
+      const nameFilter = "apollo11";
       const result = graphql(
         schema,
         query,
@@ -277,7 +277,7 @@ describe("graphqlObservable", function() {
     });
 
     itMarbles("filters by static argument", function(m) {
-      const query = gql`
+      const query = `
         query {
           launched(name: "apollo13") {
             name
@@ -300,7 +300,7 @@ describe("graphqlObservable", function() {
     });
 
     itMarbles("filters out fields", function(m) {
-      const query = gql`
+      const query = `
         query {
           launched {
             name
@@ -322,7 +322,7 @@ describe("graphqlObservable", function() {
     });
 
     itMarbles("resolve with name alias", function(m) {
-      const query = gql`
+      const query = `
         query {
           launched {
             title: name
@@ -344,7 +344,7 @@ describe("graphqlObservable", function() {
     });
 
     itMarbles("resolves using root value", function(m) {
-      const query = gql`
+      const query = `
         query {
           launched {
             name
@@ -375,7 +375,7 @@ describe("graphqlObservable", function() {
     describe("Field Resolvers", function() {
       describe("Leafs", function() {
         itMarbles("defaults to return the property on the object", function(m) {
-          const query = gql`
+          const query = `
             query {
               plain {
                 noFieldResolver
@@ -390,7 +390,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("if defined it executes the field resolver", function(m) {
-          const query = gql`
+          const query = `
             query {
               plain {
                 fieldResolver
@@ -405,7 +405,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("if defined but returns undefined, field is null", function (m) {
-          const query = gql`
+          const query = `
             query {
               plain {
                 fieldResolvesUndefined
@@ -420,7 +420,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("the field resolvers 1st argument is parent", function(m) {
-          const query = gql`
+          const query = `
             query {
               plain {
                 giveMeTheParentFieldResolver
@@ -443,7 +443,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("the field resolvers 2nd argument is arguments", function(m) {
-          const query = gql`
+          const query = `
             query {
               plain {
                 giveMeTheArgsFieldResolver(arg: "My passed arg")
@@ -466,7 +466,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("the field resolvers 3rd argument is context", function(m) {
-          const query = gql`
+          const query = `
             query {
               plain {
                 giveMeTheContextFieldResolver
@@ -489,7 +489,7 @@ describe("graphqlObservable", function() {
 
       describe("Nodes", function() {
         itMarbles("if defined it executes the field resolver", function(m) {
-          const query = gql`
+          const query = `
             query {
               item {
                 nodeFieldResolver {
@@ -512,7 +512,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("if nullable field resolver returns null, it resolves null", function(m) {
-          const query = gql`
+          const query = `
             query {
               item {
                 nullableNodeFieldResolver {
@@ -535,7 +535,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("the field resolvers 1st argument is parent", function(m) {
-          const query = gql`
+          const query = `
             query {
               item {
                 giveMeTheParentFieldResolver {
@@ -562,7 +562,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("the field resolvers 2nd argument is arguments", function(m) {
-          const query = gql`
+          const query = `
             query {
               item {
                 giveMeTheArgsFieldResolver(arg: "My passed arg") {
@@ -589,7 +589,7 @@ describe("graphqlObservable", function() {
         });
 
         itMarbles("the field resolvers 3rd argument is context", function(m) {
-          const query = gql`
+          const query = `
             query {
               item {
                 giveMeTheContextFieldResolver {
@@ -615,7 +615,7 @@ describe("graphqlObservable", function() {
       itMarbles("nested resolvers pass down the context and parent", function(
         m
       ) {
-        const query = gql`
+        const query = `
           query {
             nested {
               firstFieldResolver {
@@ -642,47 +642,38 @@ describe("graphqlObservable", function() {
       });
     });
 
-    itMarbles("throwing an error results in an error observable", function(m) {
-      const query = gql`
+    it("throwing an error results in an error in execution result", async function() {
+      const query = `
         query {
           throwingResolver
         }
       `;
-      const expected = m.cold(
-        "#",
-        {},
-        new Error(
-          "reactive-graphql: resolver 'throwingResolver' throws this error: 'Error: my personal error'"
-        )
-      );
-      const result = graphql(fieldResolverSchema, query, null, {});
-      m.expect(result.pipe(take(1))).toBeObservable(expected);
+
+      const result = await graphql(fieldResolverSchema, query, null, {}).pipe(take(1)).toPromise();
+      expect(result).toHaveProperty('errors');
+      expect(result.errors![0].message).toBe('my personal error');
+      expect(result.errors![0].path).toEqual(['throwingResolver']);
+
     });
 
-    itMarbles(
-      "accessing an unknown query field results in an error observable",
-      function(m) {
-        const query = gql`
+    it(
+      "accessing an unknown query field results in an error in execution result",
+      async function() {
+        const query = `
           query {
             youDontKnowMe
           }
         `;
-        const expected = m.cold(
-          "#",
-          {},
-          new Error(
-            "reactive-graphql: field 'youDontKnowMe' was not found on type 'Query'. The only fields found in this Object are: plain,item,nested,throwingResolver."
-          )
-        );
-        const result = graphql(fieldResolverSchema, query, null, {});
-        m.expect(result.pipe(take(1))).toBeObservable(expected);
+        const result = await graphql(fieldResolverSchema, query, null, {}).pipe(take(1)).toPromise();
+        expect(result).toHaveProperty('errors');
+        expect(result.errors![0].message).toBe('Cannot query field \"youDontKnowMe\" on type \"Query\".')
       }
     );
   });
 
   describe("Mutation", function() {
     itMarbles("createShuttle adds a shuttle and return its name", function(m) {
-      const mutation = gql`
+      const mutation = `
         mutation {
           createShuttle(name: "RocketShip") {
             name
@@ -707,7 +698,7 @@ describe("graphqlObservable", function() {
     itMarbles(
       "createShuttleList adds a shuttle and return all shuttles",
       function(m) {
-        const mutation = gql`
+        const mutation = `
           mutation {
             createShuttleList(name: "RocketShip") {
               name
@@ -738,8 +729,8 @@ describe("graphqlObservable", function() {
     );
 
     itMarbles("accept alias name", function(m) {
-      const mutation = gql`
-        mutation {
+      const mutation = `
+        mutation ($name: String){
           shut: createShuttle(name: $name) {
             name
           }
@@ -766,5 +757,49 @@ describe("graphqlObservable", function() {
 
       m.expect(result).toBeObservable(expected);
     });
+
+    it('respects serial execution of resolvers', async () => {
+      let theNumber = 0;
+      const schema = makeExecutableSchema({
+        typeDefs: `
+        type Mutation {
+          increment: Int!
+        }
+        type Query {
+          theNumber: Int!
+        }
+      `,
+      resolvers: {
+          Mutation: {
+            // atomic resolver
+            increment: async () => {
+              const _theNumber = theNumber;
+              await delay(100);
+              theNumber = _theNumber + 1;
+              return theNumber;
+            }
+          },
+        }
+      });
+
+      const result$ = graphql({
+        schema,
+        source: `
+        mutation {
+          first: increment,
+          second: increment,
+          third: increment,
+        }
+        `,
+      })
+      const result = await result$.pipe(take(1)).toPromise();
+      expect(result).toEqual({
+        data: {
+          first: 1,
+          second: 2, // 1 if not serial
+          third: 3, // 1 if not serial
+        }
+      })
+    })
   });
 });
