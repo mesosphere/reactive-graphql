@@ -1,5 +1,5 @@
 {
-  "name": "@getstation/reactive-graphql",
+  "name": "reactive-graphql",
   "repository": {
     "type": "git",
     "url": "https://github.com/mesosphere/reactive-graphql"
@@ -9,7 +9,7 @@
   "files": [
     "dist"
   ],
-  "version": "4.0.2",
+  "version": "0.0.0-dev+semantic-release",
   "license": "Apache-2.0",
   "scripts": {
     "test": "jest",
