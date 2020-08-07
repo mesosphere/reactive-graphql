@@ -415,7 +415,10 @@ function resolveFieldValueOrError<TSource>(
  * Note: copy-paste of `graphql-js`'s `asErrorInstance` in `execute.js`.
  */
 function asErrorInstance(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error) || undefined);
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error('Unexpected error value: ' + inspect(error));
 }
 
 /**
