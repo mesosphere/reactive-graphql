@@ -1,7 +1,7 @@
 /**
  * `execute.ts` is the equivalent of `graphql-js`'s `src/execution/execute.js`:
  * it follows the same structure and same function names.
- * 
+ *
  * The implementation of each function is very close to its sibling in `graphql-js`
  * and, for the most part, is just adapted for reactive execution (dealing with `Observable`).
  * Some functions are just copy-pasted because they did not require any change
@@ -61,9 +61,9 @@ import mapToFirstValue from "../rxutils/mapToFirstValue";
 
 /**
  * Implements the "Evaluating requests" section of the GraphQL specification.
- * 
+ *
  * Returns a RxJS's `Observable` of `ExecutionResult`.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `execute`.
  */
 export function execute<TData = ExecutionResultDataDefault>(args: ExecutionArgs)
@@ -149,7 +149,7 @@ function executeImpl<TData>(
 
 /**
  * Returns true if subject is a valid `ExecutionContext` and not array of `GraphQLError`.
- * 
+ *
  * Note: reference implementation does a `Array.isArray` in `executeImpl` function body. In comparison,
  * `isValidExecutionContext` ensures typing correctness with type assertion.
  * @param subject value to be tested
@@ -161,7 +161,7 @@ function isValidExecutionContext(subject: ReadonlyArray<GraphQLError> | Executio
 /**
  * Given a completed execution context and data as Observable, build the `{ errors, data }`
  * response defined by the "Response" section of the GraphQL specification.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `buildResponse`.
  */
 function buildResponse<TData>(
@@ -185,7 +185,7 @@ function buildResponse<TData>(
 
 /**
  * Implements the "Evaluating operations" section of the spec.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `executeOperation`. The difference lies
  * in the fact that, here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value).
  */
@@ -225,7 +225,7 @@ function executeOperation(
 /**
  * Implements the "Evaluating selection sets" section of the spec for "write" mode,
  * ie with serial execution.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `executeFieldsSerially`. The difference
  * lies in the fact that:
  * - here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value)
@@ -285,7 +285,7 @@ function executeFieldsSerially(
 /**
  * Implements the "Evaluating selection sets" section of the spec
  * for "read" mode.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `executeFields`. The difference lies
  * in the fact that, here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value).
  */
@@ -320,7 +320,7 @@ function executeFields(
 
 /**
  * Resolves the field on the given source object.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `resolveField`. The difference lies
  * in the fact that, here, a RxJS's `Observable` is returned instead of a `Promise` (or plain value).
  */
@@ -386,9 +386,9 @@ function resolveFieldValueOrError<TSource>(
       fieldNodes[0],
       exeContext.variableValues,
     );
-  
+
     const contextValue = exeContext.contextValue;
-  
+
     const result = resolveFn(source, args, contextValue, info);
 
     if (isObservable(result)) {
@@ -411,7 +411,7 @@ function resolveFieldValueOrError<TSource>(
 /**
  * Sometimes a non-error is thrown, wrap it as an Error instance to ensure a
  * consistent Error interface.
- * 
+ *
  * Note: copy-paste of `graphql-js`'s `asErrorInstance` in `execute.js`.
  */
 function asErrorInstance(error: unknown): Error {
@@ -602,7 +602,7 @@ function completeValue(
 /**
  * Complete a list value by completing each item in the list with the
  * inner type
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `completeListValue`. The difference lies
  * in the fact that, here, we deal with RxJS's `Observable` and an `Observable` is returned.
  */
@@ -640,12 +640,14 @@ function completeListValue(
     completedResults.push(completedItem);
   });
 
+  // avoid blocking in switchMap with empty arrays
+  if (completedResults.length === 0) return of([]);
   return combineLatest(completedResults);
 }
 /**
  * Complete a Scalar or Enum by serializing to a valid value, returning
  * null if serialization is not possible.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `completeLeafValue`. The difference lies
  * in the fact that, here, an `Observable` is returned.
  */
@@ -663,7 +665,7 @@ function completeLeafValue(returnType: GraphQLLeafType, result: unknown): Observ
 /**
  * Complete a value of an abstract type by determining the runtime object type
  * of that value, then complete the value for that type.
- * 
+ *
  * Note: reactive equivalent of `graphql-js`'s `completeAbstractValue`. The difference lies
  * in the fact that, here, we deal with asychronisity in a Observable fashion and that
  * an `Observable` is returned.
@@ -792,7 +794,7 @@ function completeObjectValue(
 }
 
 /**
- * 
+ *
  * Note: copy-pasted from `graphql-js`.
  */
 function invalidReturnTypeError(
@@ -827,7 +829,7 @@ function collectAndExecuteSubfields(
  * A memoized collection of relevant subfields with regard to the return
  * type. Memoizing ensures the subfields are not repeatedly calculated, which
  * saves overhead when resolving lists of values.
- * 
+ *
  * Note: copy-pasted from `graphql-js`. The difference lies in the fact that
  * `graphql-js` implements its own memoization, while we use `memoizee` package.
  */
